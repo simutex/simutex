@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title><%= unescape(ptitle) %> | <%= unescape(brand.name) %></title>
+
+    <!-- Bootstrap core CSS -->
+    <link type="text/css" rel="stylesheet" href="/dist/css/bootstrap.min.css">
+
+    <!-- jQuery UI Layout Styles -->
+    <link type="text/css" rel="stylesheet" href="/dist/css/layout-default-styles.css">
+
+    <!-- Custom styles for this template -->
+    <link type="text/css" rel="stylesheet" href="/dist/css/editor-styles.css" >
+    
+</head>
+
+<body>
+
+    <div class="d-flex" id="wrapper">
+
+        <!-- Sidebar -->
+        <div class="bg-light border-right" id="sidebar-wrapper">
+            <div class="sidebar-heading text-truncate" data-toggle="tooltip" data-placement="right" title="<%= brand.name %>" style="cursor: default;"><%= brand.name %></div>
+            <div class="list-group list-group-flush" style="height:calc(100% - 57px);">
+                <a href="#" class="list-group-item list-group-item-action bg-light">Dashboard</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Shortcuts</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Overview</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Events</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Profile</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Status</a>
+            </div>
+        </div>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+
+            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+                <!-- <button class="btn btn-primary" id="menu-toggle">Toggle Menu</button> -->
+
+                <button class="navbar-toggler float-right" type="button" data-toggle="collapse"
+                    data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <span id="project_title" class="user-select-none" role="button"><%= unescape(ptitle) %></span>
+                    <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                More
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item" href="/projects">My Projects</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="./settings/share">Share</a>
+                                <span class="dropdown-item" style="cursor: pointer;" onclick="compileLaTeX(true);">Compile</span>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="./settings">Settings</a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div id="editor-container" class="container-fluid" style="padding:0px; margin:0px; height:calc(100% - 57px);">
+                <div class="ui-layout-center border-width-right no-padding" id="editor-parent">
+                    <div id="editor-left"></div>
+                </div>
+
+                <div id="pdf-viewer-parent" class="ui-layout-east border-width-left no-padding">
+                    <object id="pdf-viewer" type="application/pdf" data=""></object>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- jQuery Libraries -->
+    <script type="text/javascript" src="/dist/js/jquery-latest.js"></script>
+    <script type="text/javascript" src="/dist/js/jquery-ui-latest.js"></script>
+    <script type="text/javascript" src="/dist/js/jquery.layout-latest.js"></script>
+
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Ace Editor Libraries -->
+    <script type="text/javascript" src="/dist/js/ace/ace.js"></script>
+    <script type="text/javascript" src="/dist/js/ace/ext-language_tools.js"></script>
+    <script type="text/javascript" src="/dist/js/ace/ext-modelist.js"></script>
+
+    <% if ((pdata || pdata=="" ) && pid) { %>
+    <!-- Project Data -->
+    <script>
+        var pid = unescape(`<%= pid %>`);
+        var pdata = unescape(`<%= pdata %>`);       
+    </script>
+    <% } %>
+
+    <!-- Editor core Javascript -->
+    <script type="text/javascript" src="/dist/js/editor.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Projects</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="text-center">
+
+    <div class="container">
+        <div class="row m-3">
+            <div class="col">
+                <a href="/projects/new" class="btn btn-primary">Create new project</a>
+            </div>
+        </div>
+        <% if (projects_data) {
+            for (let i = 0; i < projects_data.length; i++) { %>
+        <div class="row m-3">
+            <div class="col text-center">
+                <a href="<%= `/projects/${projects_data[i]['id']}` %>"><%= projects_data[i]['title'] %></a>
+            </div>
+        </div>
+            <% }
+        } %>
+    </div>
+
+    <!-- jQuery Libraries -->
+    <script type="text/javascript" src="/dist/js/jquery-latest.js"></script>
+    
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
