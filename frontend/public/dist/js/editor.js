@@ -11,6 +11,7 @@ $(document).on("dblclick", "#project_title", function () {
             $.post('./settings/rename', { data: new_project_name }, (data) => {
                 if (data == "M") {
                     $("#project_title").text(new_project_name);
+                    $(document).prop('title', new_project_name + ' | ' + bname);
                 } else {
                     $("#project_title").text(old_project_title);
                 }
