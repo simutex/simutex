@@ -4,11 +4,14 @@
     "description": "node server",
     "main": "app.js",
     "scripts": {
+        "build": "webpack",
         "start": "node app.js",
         "dev": "nodemon ./app.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {
+        "@teamwork/websocket-json-stream": "^2.0.0",
+        "ace-builds": "^1.4.12",
         "cookie-parser": "^1.4.5",
         "ejs": "^3.1.5",
         "express": "^4.17.1",
@@ -16,10 +19,21 @@
         "mkdirp": "^1.0.4",
         "mongo-sanitize": "^1.1.0",
         "mongoose": "^5.11.11",
-        "uuid": "^8.3.2"
+        "process": "^0.11.10",
+        "sharedb": "^1.5.2",
+        "sharedb-mongo": "^1.0.0-beta.15",
+        "uuid": "^8.3.2",
+        "ws": "^7.4.2"
     },
     "devDependencies": {
+        "bootstrap": "^4.5.3",
+        "file-loader": "^6.2.0",
+        "jquery": "^3.5.1",
         "nodemon": "^2.0.2",
+        "ot-json1": "^1.0.1",
+        "popper.js": "^1.16.1",
+        "reconnecting-websocket": "^4.4.0",
+        "sharedb-string-binding": "^1.0.0",
         "webpack": "^5.13.0",
         "webpack-cli": "^4.3.1"
     }

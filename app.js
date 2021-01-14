@@ -32,7 +32,7 @@ app.use((req, res, next) => {
  */
 var projectsRoute = require('./app/src/projects.js');
 const sanitize = require('mongo-sanitize');
-app.use('/projects', projectsRoute);
+app.use('/projects', projectsRoute.router);
 
 /**
  * Main page.
@@ -89,6 +89,9 @@ app.get('/test', (req, res) => {
 /**
  * Start the application on the specified port.
  */
-app.listen(config.server.port, () => {
+var server = app.listen(config.server.port, () => {
     console.log(`Server listening on the port::${config.server.port}`);
+
+    // Create the ShareDB WebSocket 
+    projectsRoute.createCollaborationServer(server);
 });

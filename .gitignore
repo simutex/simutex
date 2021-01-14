@@ -1,3 +1,4 @@
 node_modules
 latexmk
 projects
+frontend/public/dist/js/editor

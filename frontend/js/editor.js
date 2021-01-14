@@ -1,3 +1,9 @@
+import "ace-builds";
+import "ace-builds/webpack-resolver";
+import "bootstrap";
+
+import '../public/dist/js/jquery.layout-latest.js';
+
 /* Project Title Editing */
 $(document).on("dblclick", "#project_title", function () {
     let old_project_title = $("#project_title").text().trim();
@@ -49,7 +55,6 @@ $("#menu-toggle").click((e) => {
     $("#wrapper").toggleClass("toggled");
 });
 
-var editorLeft = $("#editor-left");
 var aceEditorLeft = null;
 $(document).ready(function () {
     $('#editor-container').layout({
@@ -89,14 +94,14 @@ $(document).ready(function () {
         enableSnippets: true,
         enableLiveAutocompletion: true
     });
-    if (pdata) {
+    /* if (pdata) {
         aceEditorLeft.setValue(pdata);
         compileLaTeX(true);
-    }
+    } */
     aceEditorLeft.moveCursorTo(0, 0);
 });
 
-function compileLaTeX(force_build = false) {
+export function compileLaTeX(force_build = false) {
     if (aceEditorLeft != null) {
         $.post('./build', { data: aceEditorLeft.getValue(), build: force_build ? true : $('#buildProject').prop('checked') }, (data) => {
             if (data.charAt(0) == 'E' || data.charAt(0) == 'M') {
@@ -121,15 +126,131 @@ function compileLaTeX(force_build = false) {
     }
 }
 
-function promptDelete() {
-    if (confirm("Are you sure you want to permanently delete this project?\n\nThis cannot be undone.")) {
-        window.location.href = './delete';
-    }
-}
-
 $(document).keydown(function (event) {
     if (!(String.fromCharCode(event.which).toLowerCase() == 's' && event.ctrlKey) && !(event.which == 19)) return true;
     compileLaTeX();
     event.preventDefault();
     return false;
 });
+
+import sharedb from 'sharedb/lib/client';
+import ReconnectingWebSocket from 'reconnecting-websocket';
+import * as process from 'process';
+window['process'] = process;
+import * as json1 from 'ot-json1';
+
+sharedb.types.register(json1.type);
+var socket = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080');
+var connection = new sharedb.Connection(socket);
+
+socket.addEventListener('open', function () {
+    console.log('Connected');
+});
+
+socket.addEventListener('close', function () {
+    console.log('Closed');
+});
+
+socket.addEventListener('error', function () {
+    console.log('Error');
+});
+
+export var doc = connection.get('project_data', pid);
+
+var path = [];
+var suppressed = false;
+var my_id = "noah";
+
+doc.subscribe(function (err) {
+    if (err) throw err;
+    aceEditorLeft.setValue(doc.data);
+    aceEditorLeft.moveCursorTo(0, 0);
+    aceEditorLeft.on('change', (delta) => {
+        if (!suppressed) {
+            const aceDoc = aceEditorLeft.getSession().getDocument();
+
+            const op = {};
+
+            const start = aceDoc.positionToIndex(delta.start);
+            const end = aceDoc.positionToIndex(delta.end);
+
+            op.p = path.concat(start);
+
+            let action;
+            if (delta.action === 'insert') {
+                action = 'si';
+            } else if (delta.action === 'remove') {
+                action = 'sd';
+            } else {
+                throw new Error(`action ${action} not supported`);
+            }
+            const str = delta.lines.join('\n');
+            op[action] = str;
+
+            const docSubmitted = (err) => {
+                if (err) throw err;
+            };
+
+            doc.submitOp(op, { source: my_id }, docSubmitted);
+        }
+    });
+    doc.on('op', (ops, source) => {
+        const opsPath = ops[0].p.slice(0, ops[0].p.length - 1).toString();
+
+        if (source === my_id) {
+            console.log('*remote*: op origin is self; _skipping_');
+            return;
+        } else if (opsPath !== path.toString()) {
+            console.log('*remote*: not from my path; _skipping_');
+            return;
+        }
+
+        const deltas = opTransform(ops);
+
+        suppressed = true;
+        aceEditorLeft.getSession().getDocument().applyDeltas(deltas);
+        suppressed = false;
+    });
+});
+
+function opTransform(ops) {
+    function opToDelta(op) {
+        const index = op.p[op.p.length - 1];
+        const pos = aceEditorLeft.getSession().getDocument().indexToPosition(index, 0);
+        const start = pos;
+        let action;
+        let lines;
+        let end;
+        if ('sd' in op) {
+            action = 'remove';
+            lines = op.sd.split('\n');
+            const count = lines.reduce((total, line) => total + line.length, lines.length - 1);
+            end = aceEditorLeft.getSession().getDocument().indexToPosition(index + count, 0);
+        } else if ('si' in op) {
+            action = 'insert';
+            lines = op.si.split('\n');
+            if (lines.length === 1) {
+                end = {
+                    row: start.row,
+                    column: start.column + op.si.length,
+                };
+            } else {
+                end = {
+                    row: start.row + (lines.length - 1),
+                    column: lines[lines.length - 1].length,
+                };
+            }
+        } else {
+            throw new Error(`Invalid Operation: ${JSON.stringify(op)}`);
+        }
+        const delta = {
+            start,
+            end,
+            action,
+            lines,
+        };
+        return delta;
+    }
+    const deltas = ops.map(opToDelta);
+    return deltas;
+}

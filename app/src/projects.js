@@ -7,6 +7,10 @@ const bodyParser = require('body-parser');
 const cookierParser = require('cookie-parser');
 const spawn = require('child_process').spawn;
 const uuid = require('uuid');
+const WebSocket = require('ws');
+const ShareDB = require('sharedb');
+const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
+
 const cmdRouter = express.Router({ mergeParams: true });
 cmdRouter.use(bodyParser.urlencoded({ extended: true }));
 cmdRouter.use(bodyParser.json());
@@ -15,6 +19,23 @@ cmdRouter.use(cookierParser());
 const db = require('./db');
 const auth = require('./auth');
 const config = require('../../config');
+
+// Create a second connnection to the MongoDB instance for ShareDB
+const sdb = require('sharedb-mongo')(`mongodb://${config.database.hostname}:${config.database.port}/${config.database.name}`, { mongoOptions: { useUnifiedTopology: true } });
+const backend = new ShareDB({ db: sdb });
+
+/**
+ * Creates the ShareDB WebSocket
+ * 
+ * appServer is the http server return from expressjs.app.listen()
+ */
+function createCollaborationServer(appServer) {
+    var wss = new WebSocket.Server({ server: appServer });
+    wss.on('connection', (ws) => {
+        var stream = new WebSocketJSONStream(ws);
+        backend.listen(stream);
+    });
+}
 
 /**
  * Require credential authentication for all requests.
@@ -93,16 +114,31 @@ cmdRouter.get('/edit', (req, res) => {
     auth.project.modify(req, res, () => {
         // Get project data
         db.get().collection('projects').findOne({ id: req.params.id }, { projection: { title: true, owner: true, collaborators: true, viewers: true } }, (err, project) => {
+            if (err) throw err;
+
             fs.readFile(`./projects/${req.params.id}/in.tex`, (err, data) => {
+                if (err) throw err;
+                pdata = ((data === undefined) ? "" : data).toString();
                 ejs_vars = {
                     brand: config.brand,
                     pid: escape(req.params.id),
                     ptitle: escape(project.title),
-                    pdata: escape(((data === undefined) ? "" : data).toString()),
+                    pdata: escape(pdata),
                     pisowner: (project.owner == req.cookies.u),
                     piscollab: project.collaborators.includes(req.cookies.u),
                     pisviewer: project.viewers.includes(req.cookies.u)
                 }
+
+                var connection = backend.connect();
+                var doc = connection.get('project_data', req.params.id);
+                doc.fetch((err) => {
+                    if (err) throw err;
+                    if (doc.type == null) {
+                        doc.create(pdata);
+                        return;
+                    }
+                });
+
                 ejs.renderFile('app/views/editor.ejs', ejs_vars, {}, (err, str) => {
                     res.send(str);
                 });
@@ -342,4 +378,7 @@ cmdRouter.post('/build', auth.project.modify, (req, res) => {
 });
 
 //export this router to use in our server.js
-module.exports = router;
+module.exports = {
+    router,
+    createCollaborationServer
+};
