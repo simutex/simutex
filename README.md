@@ -38,4 +38,4 @@ SimuTex is an in-work collaborative LaTeX editing application available in the b
 8. Execute `npm install` to install the needed Node.js packages
 9. Execute `npm build` to build the webpack bundles
 10. Execute `npm run start` to start the server
-11. Open a browser and navigate to http://localhost:3080/
+11. Open a browser and navigate to http://localhost:3080/welcome to configure the root account
