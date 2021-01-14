@@ -148,6 +148,12 @@
         <% } %>
     </div>
 
+    <% if (ptitle) { %>
+        <script>
+            ptitle = "<%= unescape(ptitle) %>";
+        </script>
+    <% } %>
+
     <!-- jQuery Libraries -->
     <script type="text/javascript" src="/dist/js/jquery-latest.js"></script>
 

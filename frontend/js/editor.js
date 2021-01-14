@@ -165,6 +165,7 @@ doc.subscribe(function (err) {
     if (err) throw err;
     aceEditorLeft.setValue(doc.data);
     aceEditorLeft.moveCursorTo(0, 0);
+    compileLaTeX(true);
     aceEditorLeft.on('change', (delta) => {
         if (!suppressed) {
             const aceDoc = aceEditorLeft.getSession().getDocument();
