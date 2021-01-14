@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const ejs = require('ejs');
 const bodyParser = require('body-parser');
 const cookierParser = require('cookie-parser');
 const crypto = require('crypto');
@@ -13,7 +14,7 @@ const db = require('./db');
 
 /**
  * Provide the root configuration page if the root account does not exist.
- * 
+ *
  * Routes to / if the root account exists.
  */
 router.get('/', (req, res) => {
@@ -48,7 +49,7 @@ router.post('/', (req, res) => {
 
 /**
  * Check if the root account exists.
- * 
+ *
  * Executes pass() if true, else fail()
  */
 function check(pass, fail = () => {}) {
