@@ -12,9 +12,12 @@ module.exports = {
     database: {
         hostname: 'localhost',
         port: 27017,
-        name: 'simutex'
+        name: 'simutex',
+        project: {
+            delete: 'archive'
+        }
     },
     latexmk: {
-        path: 'X:/SimuTex/latexmk'
+        path: 'X:/simutex-fork/latexmk'
     }
 }

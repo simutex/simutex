@@ -43,10 +43,10 @@ function createCollaborationServer(appServer) {
 router.use(auth.credentials);
 
 /**
- * Should a list of all the users projects.
+ * Show a list of all the users projects.
  */
 router.get('/', (req, res) => {
-    db.get().collection('projects').find({ "owner": req.cookies.u }).project({ title: true, id: true }).toArray((err, projects) => {
+    db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] }).project({ title: true, id: true }).toArray((err, projects) => {
         ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects }, {}, (err, str) => {
             res.send(str);
         });
@@ -208,11 +208,38 @@ cmdRouter.get('/download', auth.project.access, (req, res) => {
  * Requires owner permissions.
  */
 cmdRouter.get('/delete', auth.project.owner, (req, res) => {
-    fs.rm(`projects/${req.params.id}`, { recursive: true }, (e) => {
-        db.get().collection('projects').deleteOne({ id: req.params.id }, (err, db) => {
-            res.redirect('/projects');
-        });
-    });
+
+
+    switch (config.database.project.delete) {
+        case 'all':
+            // Delete all data from `projects`, `project_data`, and `o_project_data` and on-disk    
+            db.get().collection('projects').deleteOne({ id: req.params.id }, (err, result_one_a) => {
+                db.get().collection('project_data').deleteOne({ _id: req.params.id }, (err, result_one_b) => {
+                    db.get().collection('o_project_data').deleteMany({ d: req.params.id }, (err, result_many) => {
+                        fs.rm(`projects/${req.params.id}`, { recursive: true }, (e) => {
+                            res.redirect('/projects');
+                        });
+                    });
+                });
+            });
+            break;
+        case 'hidden':
+            // Hide the project by adding "hidden: true" to project in `projects`
+            db.get().collection('projects').updateOne({ id: req.params.id }, { $set: { hidden: true } }, (e) => {
+                res.redirect('/projects');
+            });
+            break;
+        case 'archive':
+            // Hides the project and deletes all relevant information in `o_project_data`
+            db.get().collection('projects').updateOne({ id: req.params.id }, { $set: { hidden: true } }, (e) => {
+                db.get().collection('o_project_data').deleteMany({ d: req.params.id }, (err, result_many) => {
+                    res.redirect('/projects');
+                });
+            });
+            break;
+        default:
+            throw new Error("Invalid configuration value: config.data.project.data");
+    }
 });
 
 /**

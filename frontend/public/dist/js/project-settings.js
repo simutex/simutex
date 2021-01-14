@@ -9,7 +9,9 @@ $(() => {
 });
 
 function attemptDelete() {
-    if ($("#delete_project_title").val().trim().toLowerCase() == "<%= unescape(ptitle).trim().toLowerCase() %>") {
+    console.log($("#delete_project_title").val().trim().toLowerCase());
+    console.log("<%= unescape(ptitle).trim().toLowerCase() %>");
+    if ($("#delete_project_title").val().trim().toLowerCase() == ptitle.trim().toLowerCase()) {
         window.location.href = './delete';
     }
 }
