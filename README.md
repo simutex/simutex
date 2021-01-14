@@ -1,10 +1,10 @@
 # SimuTex
-A web-based LaTeX editor with planned collaborative editing.
+A web-based LaTeX editor with collaborative editing.
 
 # About
 SimuTex is an in-work collaborative LaTeX editing application available in the browser. 
 
-The application currently does not contain collaborative editing, arguably a key feature of the application.
+~~The application currently does not contain collaborative editing, arguably a key feature of the application.~~
 
 # Current Features
 - Create, rename, and delete projects
@@ -18,7 +18,7 @@ The application currently does not contain collaborative editing, arguably a key
 - Image support, currently there is none!
 - File upload
 - BibTex
-- Collaborative real-time editing
+- User prescense, multiple cursors, and more
 
 # Key Information
 - Uses `latexmk` to correctly compile projects
@@ -34,7 +34,8 @@ The application currently does not contain collaborative editing, arguably a key
 4. Create the MongoDB database using the database name chosen above
 5. Start the MongoDB instance
 6. Place a copy of `latexmk` in the root repository directory
-6. Open a terminal in the repository directory
-2. Execute `npm install` to install the needed Node.js packages
-3. Execute `npm run start` to start the server
-4. Open a browser and navigate to http://localhost:3080/
+7. Open a terminal in the repository directory
+8. Execute `npm install` to install the needed Node.js packages
+9. Execute `npm build` to build the webpack bundles
+10. Execute `npm run start` to start the server
+11. Open a browser and navigate to http://localhost:3080/
