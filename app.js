@@ -8,11 +8,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookierParser());
 
+const config = require('./config');
 const auth = require('./app/src/auth');
 const db = require('./app/src/db');
-db.connect(() => { });
 
-const config = require('./config');
+db.connect(() => {
+    /**
+     * Determines if the first-time setup page should be accessible.
+     */
+    const welcome = require('./app/src/welcome');
+    welcome.check(() => {
+        app.use('/welcome', welcome.router);
+    });
+
+});
+
 
 /** 
  * Sanitize all cookies and body parameters sent by the user.
