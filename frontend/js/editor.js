@@ -140,7 +140,7 @@ window['process'] = process;
 import * as json1 from 'ot-json1';
 
 sharedb.types.register(json1.type);
-var socket = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080');
+var socket = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080/api/' + pid);
 var connection = new sharedb.Connection(socket);
 
 socket.addEventListener('open', function () {

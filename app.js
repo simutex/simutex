@@ -73,7 +73,7 @@ app.get('/login', (req, res) => {
  * 
  * Redirects to /projects if authentication is successful.
  */
-app.post('/login', auth.credentials, (req, res) => {
+app.post('/login', auth.middleware.credentials, (req, res) => {
     res.redirect('/projects');
 });
 
@@ -97,7 +97,7 @@ app.get('/test', (req, res) => {
     });
 });
 
-app.get('/admin', auth.credentials, auth.admin, (req, res) => {
+app.get('/admin', auth.middleware.credentials, auth.middleware.admin, (req, res) => {
     ejs.renderFile('./app/views/admin.ejs', {}, {}, (err, str) => {
         res.send(str);
     });
