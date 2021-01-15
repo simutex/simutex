@@ -1,12 +1,13 @@
 const express = require('express');
 const bodyParser = require("body-parser");
-const cookierParser = require("cookie-parser");
+const cookieParser = require("cookie-parser");
 const ejs = require('ejs');
 const app = express();
 app.use(express.static(__dirname + '/frontend/public'))
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cookierParser());
+app.use(cookieParser());
+const ews = require('express-ws')(app);
 
 const config = require('./config');
 const auth = require('./app/src/auth');
@@ -96,12 +97,19 @@ app.get('/test', (req, res) => {
     });
 });
 
+app.get('/admin', auth.credentials, auth.admin, (req, res) => {
+    ejs.renderFile('./app/views/admin.ejs', {}, {}, (err, str) => {
+        res.send(str);
+    });
+});
+
+
 /**
  * Start the application on the specified port.
  */
-var server = app.listen(config.server.port, () => {
+app.listen(config.server.port, () => {
     console.log(`Server listening on the port::${config.server.port}`);
 
     // Create the ShareDB WebSocket 
-    projectsRoute.createCollaborationServer(server);
+    projectsRoute.createCollaborationServer(app);
 });

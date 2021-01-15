@@ -10,6 +10,7 @@ const uuid = require('uuid');
 const WebSocket = require('ws');
 const ShareDB = require('sharedb');
 const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
+const url = require('url');
 
 const cmdRouter = express.Router({ mergeParams: true });
 cmdRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -25,17 +26,42 @@ const sdb = require('sharedb-mongo')(`mongodb://${config.database.hostname}:${co
 const backend = new ShareDB({ db: sdb });
 
 /**
- * Creates the ShareDB WebSocket
+ * Create WebSockets for communication
  * 
- * appServer is the http server return from expressjs.app.listen()
+ * Use express-ws for WebSocket connection using `ws` underneath
  */
-function createCollaborationServer(appServer) {
-    var wss = new WebSocket.Server({ server: appServer });
-    wss.on('connection', (ws) => {
-        var stream = new WebSocketJSONStream(ws);
-        backend.listen(stream);
-    });
+function createCollaborationServer(app) {
+    app.ws('/', (ws, req) => {
+        auth.credentials(req, null, () => {
+            let metadata = {
+                userid: req.cookies.u
+            }
+            let stream = new WebSocketJSONStream(ws);
+            backend.listen(stream, metadata);
+        }, undefined);
+    })
 }
+
+/** 
+ * Pass custom metadata on to the request agent
+ */
+backend.use('connect', (request, callback) => {
+    // Clone request to avoid mutation after connection
+    const requestJson = JSON.stringify(request.req || {});
+    const requestData = JSON.parse(requestJson);
+
+    Object.assign(request.agent.custom, requestData);
+    callback();
+});
+
+/**
+ * Assign the operation user ID to the user account ID
+ */
+backend.use('submit', (request, callback) => {
+    request.op.m.userid = request.agent.custom.userid;
+    callback();
+});
+
 
 /**
  * Require credential authentication for all requests.
