@@ -7,10 +7,8 @@ const bodyParser = require('body-parser');
 const cookierParser = require('cookie-parser');
 const spawn = require('child_process').spawn;
 const uuid = require('uuid');
-const WebSocket = require('ws');
 const ShareDB = require('sharedb');
 const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
-const url = require('url');
 
 const cmdRouter = express.Router({ mergeParams: true });
 cmdRouter.use(bodyParser.urlencoded({ extended: true }));
