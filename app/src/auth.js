@@ -15,7 +15,7 @@ const crypto = require('crypto');
 function authCredentials(req, res, next, fail = undefined) {
     if (req.body.username === undefined || req.body.password === undefined) {
         if (req.cookies.u !== undefined && req.cookies.h !== undefined) {
-            db.get().collection('accounts').find({ "username": req.cookies.u, "password": req.cookies.h }).toArray((err, accounts) => {
+            db.get().collection('accounts').find({ username: req.cookies.u, password: req.cookies.h }).toArray((err, accounts) => {
                 if (err || accounts.length != 1) {
                     defaultLoginFail(req, res, fail);
                 }
@@ -28,7 +28,7 @@ function authCredentials(req, res, next, fail = undefined) {
         }
     } else {
         var hashpass = crypto.createHash("sha512").update(req.body.password, 'utf-8').digest('hex');
-        db.get().collection('accounts').find({ "username": req.body.username, "password": hashpass }).toArray((err, accounts) => {
+        db.get().collection('accounts').find({ username: req.body.username, password: hashpass }).toArray((err, accounts) => {
             if (err || accounts.length != 1) {
                 defaultLoginFail(req, res, fail);
             }
@@ -64,7 +64,7 @@ function defaultLoginFail(req, res, fail) {
  * Users who can modify a project are the owner and collaborators.
  */
 function authProjectModify(req, res, next, fail = undefined) {
-    db.get().collection('projects').find({ "id": req.params.id, $or: [{ "owner": req.cookies.u }, { "collaborators": { $in: [req.cookies.u] } }] }).toArray((err, project) => {
+    db.get().collection('projects').find({ id: req.params.id, $or: [{ owner: req.cookies.u }, { collaborators: { $in: [req.cookies.u] } }] }).toArray((err, project) => {
         if (err || project.length != 1) {
             defaultProjectFail(req, res, fail);
         }
@@ -78,7 +78,7 @@ function authProjectModify(req, res, next, fail = undefined) {
  * Attempts to authenticate if the user is the project owner.
  */
 function authProjectOwner(req, res, next, fail = undefined) {
-    db.get().collection('projects').find({ "id": req.params.id, "owner": req.cookies.u }).toArray((err, project) => {
+    db.get().collection('projects').find({ id: req.params.id, owner: req.cookies.u }).toArray((err, project) => {
         if (err || project.length != 1) {
             defaultProjectFail(req, res, fail);
         }
@@ -94,7 +94,7 @@ function authProjectOwner(req, res, next, fail = undefined) {
  * Users who can access the project are the owner, collaborators, and viewers.
  */
 function authProjectAccess(req, res, next, fail = undefined) {
-    db.get().collection('projects').find({ "id": req.params.id, $or: [{ "owner": { $in: [req.cookies.u] } }, { "collaborators": { $in: [req.cookies.u] } }, { "viewers": { $in: [req.cookies.u] } }] }).toArray((err, project) => {
+    db.get().collection('projects').find({ id: req.params.id, $or: [{ owner: { $in: [req.cookies.u] } }, { collaborators: { $in: [req.cookies.u] } }, { viewers: { $in: [req.cookies.u] } }] }).toArray((err, project) => {
         if (err || project.length != 1) {
             defaultProjectFail(req, res, fail);
         }
@@ -115,11 +115,31 @@ function defaultProjectFail(req, res, fail) {
     }
 }
 
+/**
+ * Permits access if the account is an administrator.
+ * 
+ * Redirects the user to their previous back if a failure callback is not provided.
+ */
+function authAdministrator(req, res, next, fail = undefined) {
+    db.get().collection('accounts').find({ username: req.cookies.u, admin: true }).toArray((err, account) => {
+        if (err || account.length != 1) {
+            if (fail === undefined) {
+                res.redirect('/');
+            } else {
+                fail();
+            }
+        } else {
+            next();
+        }
+    });
+}
+
 module.exports = {
     credentials: authCredentials,
     project: {
         modify: authProjectModify,
         owner: authProjectOwner,
         access: authProjectAccess
-    }
+    },
+    admin: authAdministrator 
 }
