@@ -7,7 +7,6 @@ const bodyParser = require('body-parser');
 const cookierParser = require('cookie-parser');
 const spawn = require('child_process').spawn;
 const uuid = require('uuid');
-const WebSocket = require('ws');
 const ShareDB = require('sharedb');
 const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 
@@ -25,22 +24,49 @@ const sdb = require('sharedb-mongo')(`mongodb://${config.database.hostname}:${co
 const backend = new ShareDB({ db: sdb });
 
 /**
- * Creates the ShareDB WebSocket
+ * Create WebSockets for communication
  * 
- * appServer is the http server return from expressjs.app.listen()
+ * Use express-ws for WebSocket connection using `ws` underneath
  */
-function createCollaborationServer(appServer) {
-    var wss = new WebSocket.Server({ server: appServer });
-    wss.on('connection', (ws) => {
-        var stream = new WebSocketJSONStream(ws);
-        backend.listen(stream);
+function createCollaborationServer(app) {
+    app.ws('/api/:id', (ws, req) => {
+        console.log(req.params);
+        auth.credentials(req.cookies.u, req.cookies.h, () => {
+            auth.project.modify(req.params.id, req.cookies.u, () => {
+                let metadata = {
+                    userid: req.cookies.u
+                }
+                let stream = new WebSocketJSONStream(ws);
+                backend.listen(stream, metadata);
+            }, () => { })
+        }, () => { });
     });
 }
+
+/** 
+ * Pass custom metadata on to the request agent
+ */
+backend.use('connect', (request, callback) => {
+    // Clone request to avoid mutation after connection
+    const requestJson = JSON.stringify(request.req || {});
+    const requestData = JSON.parse(requestJson);
+
+    Object.assign(request.agent.custom, requestData);
+    callback();
+});
+
+/**
+ * Assign the operation user ID to the user account ID
+ */
+backend.use('submit', (request, callback) => {
+    request.op.m.userid = request.agent.custom.userid;
+    callback();
+});
 
 /**
  * Require credential authentication for all requests.
  */
-router.use(auth.credentials);
+router.use(auth.middleware.credentials);
 
 /**
  * Show a list of all the users projects.
@@ -86,17 +112,17 @@ router.get('/new', (req, res) => {
 /**
  * Create a new router that accepts a UUIDv4 parameters called "id" which represents the document unique ID.
  */
-router.use('/:id([0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12})', auth.project.access, cmdRouter);  // uuidv4 regex (8-4-4-4-12)
+router.use('/:id([0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12})', auth.middleware.project.access, cmdRouter);  // uuidv4 regex (8-4-4-4-12)
 
 /**
  * Determine whether they route to /edit or /view based on their project permissions
  * Uses callback functions for failure
  */
 cmdRouter.get('/', (req, res) => {
-    auth.project.modify(req, res, () => {
+    auth.middleware.project.modify(req, res, () => {
         res.redirect(`/projects/${req.params.id}/edit`);
     }, () => {
-        auth.project.access(req, res, () => {
+        auth.middleware.project.access(req, res, () => {
             res.redirect(`/projects/${req.params.id}/view`);
         }, () => {
             res.redirect('/projects');
@@ -111,7 +137,7 @@ cmdRouter.get('/', (req, res) => {
  * If the user does not have access permissions, then they will be routed to their projects.
  */
 cmdRouter.get('/edit', (req, res) => {
-    auth.project.modify(req, res, () => {
+    auth.middleware.project.modify(req, res, () => {
         // Get project data
         db.get().collection('projects').findOne({ id: req.params.id }, { projection: { title: true, owner: true, collaborators: true, viewers: true } }, (err, project) => {
             if (err) throw err;
@@ -145,7 +171,7 @@ cmdRouter.get('/edit', (req, res) => {
             });
         });
     }, () => {
-        auth.project.access(req, res, () => {
+        auth.middleware.project.access(req, res, () => {
             res.redirect(`/projects/${req.params.id}/view`);
         }, () => {
             res.redirect('/projects');
@@ -156,14 +182,14 @@ cmdRouter.get('/edit', (req, res) => {
 /**
  * Send the PDF document to the browser for rendering.
  */
-cmdRouter.get('/view', auth.project.access, (req, res) => {
+cmdRouter.get('/view', auth.middleware.project.access, (req, res) => {
     res.sendFile(req.params.id + '/out.pdf', { root: 'projects' });
 });
 
 /**
  * Alias for /view
  */
-cmdRouter.get('/pdf', auth.project.access, (req, res) => {
+cmdRouter.get('/pdf', auth.middleware.project.access, (req, res) => {
     res.redirect(`/projects/${req.params.id}/view`);
 });
 
@@ -173,7 +199,7 @@ cmdRouter.get('/pdf', auth.project.access, (req, res) => {
  * Returned page body does not contain any text/data other than the document.
  * Formatting may not appear as shown in the editor.
  */
-cmdRouter.get('/raw', auth.project.access, (req, res) => {
+cmdRouter.get('/raw', auth.middleware.project.access, (req, res) => {
     res.set('Content-Type', 'text/html');
     res.send(fs.readFileSync(`./projects/${req.params.id}/in.tex`).toString());
 });
@@ -183,7 +209,7 @@ cmdRouter.get('/raw', auth.project.access, (req, res) => {
  * 
  * Formatting should be identical, with the exception of tab length, to the editor. 
  */
-cmdRouter.get('/text', auth.project.access, (req, res) => {
+cmdRouter.get('/text', auth.middleware.project.access, (req, res) => {
     res.set('Content-Type', 'text/html');
     res.send('<html><body><pre>' + fs.readFileSync(`./projects/${req.params.id}/in.tex`).toString() + '</pre></body></html>');
 });
@@ -193,7 +219,7 @@ cmdRouter.get('/text', auth.project.access, (req, res) => {
  * 
  * Sends a basic messages if the output PDF does not exist.
  */
-cmdRouter.get('/download', auth.project.access, (req, res) => {
+cmdRouter.get('/download', auth.middleware.project.access, (req, res) => {
     var file = `./projects/${req.params.id}/out.pdf`;
     if (fs.existsSync(file)) {
         res.download(file);
@@ -207,9 +233,7 @@ cmdRouter.get('/download', auth.project.access, (req, res) => {
  * 
  * Requires owner permissions.
  */
-cmdRouter.get('/delete', auth.project.owner, (req, res) => {
-
-
+cmdRouter.get('/delete', auth.middleware.project.owner, (req, res) => {
     switch (config.database.project.delete) {
         case 'all':
             // Delete all data from `projects`, `project_data`, and `o_project_data` and on-disk    
@@ -245,7 +269,7 @@ cmdRouter.get('/delete', auth.project.owner, (req, res) => {
 /**
  * Shows project settings.
  */
-cmdRouter.get('/settings', auth.project.modify, (req, res) => {
+cmdRouter.get('/settings', auth.middleware.project.modify, (req, res) => {
     db.get().collection('projects').findOne({ id: req.params.id }, { projection: { title: true, owner: true, collaborators: true, viewers: true } }, (err, project) => {
         fs.readFile(`./projects/${req.params.id}/in.tex`, (err, data) => {
             ejs_vars = {
@@ -272,7 +296,7 @@ cmdRouter.get('/settings', auth.project.modify, (req, res) => {
 /**
  * Shows project settings, passing an action as a JavaScript variable for local use.
  */
-/* cmdRouter.get('/settings/:action', auth.project.modify, (req, res) => {
+/* cmdRouter.get('/settings/:action', auth.middleware.project.modify, (req, res) => {
     db.get().collection('projects').findOne({ id: req.params.id }, { projection: { title: true, owner: true, collaborators: true } }, (err, project) => {
         fs.readFile(`./projects/${req.params.id}/in.tex`, (err, data) => {
             ejs_vars = {
@@ -294,7 +318,7 @@ cmdRouter.get('/settings', auth.project.modify, (req, res) => {
 /**
  * Attempts to rename the project.
  */
-cmdRouter.post('/settings/rename', auth.project.modify, (req, res) => {
+cmdRouter.post('/settings/rename', auth.middleware.project.modify, (req, res) => {
     if (req.body.data) {
         db.get().collection('projects').updateOne({ id: req.params.id }, { $set: { title: req.body.data } }, (err, project) => {
             if (err) {
@@ -309,7 +333,7 @@ cmdRouter.post('/settings/rename', auth.project.modify, (req, res) => {
 /**
  * Removes a collaborator or viewer from the project.
  */
-cmdRouter.post('/settings/removeuser', auth.project.modify, (req, res) => {
+cmdRouter.post('/settings/removeuser', auth.middleware.project.modify, (req, res) => {
     function handle(err, project) {
         if (err) {
             res.send('E');
@@ -329,7 +353,7 @@ cmdRouter.post('/settings/removeuser', auth.project.modify, (req, res) => {
 /**
  * Adds a collaborator or viewer from the project.
  */
-cmdRouter.post('/settings/adduser', auth.project.modify, (req, res) => {
+cmdRouter.post('/settings/adduser', auth.middleware.project.modify, (req, res) => {
     function handle(err, project) {
         if (err) {
             res.send('E');
@@ -353,7 +377,7 @@ cmdRouter.post('/settings/adduser', auth.project.modify, (req, res) => {
  * Returns base64 encoded PDF data.
  * Builds the document and returns it if specified in the post data. (build = true)
  */
-cmdRouter.post('/build', auth.project.modify, (req, res) => {
+cmdRouter.post('/build', auth.middleware.project.modify, (req, res) => {
     let build_dir = 'projects/' + req.params.id;
     mkdirp(build_dir).then(made => {
         let in_file = build_dir + '/in.tex'
