@@ -52,7 +52,7 @@ app.use('/projects', projectsRoute.router);
  * Redirects to /projects if logged in.
  */
 app.get('/', (req, res) => {
-    auth.credentials(req, res, () => {
+    auth.middleware.credentials(req, res, () => {
         res.redirect('/projects');
     }, () => {
         res.redirect('/login');
