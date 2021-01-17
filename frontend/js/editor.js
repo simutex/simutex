@@ -203,7 +203,7 @@ doc.subscribe(function (err) {
             }
             last_user_ping[data.username].last = Date.now();
             if (!$(`#usericon${usermd5}`).length) {
-                $('#user-presence').append(`<img id='usericon${usermd5}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded img-thumbnail" style="margin-left:2px;" width="30" height="30">`);
+                $('#user-presence').append(`<img id='usericon${usermd5}' title='${data.username}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded img-thumbnail" style="margin-left:2px;" width="30" height="30">`);
             }
         }
         data.actions.forEach(element => {
