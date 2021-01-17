@@ -11,7 +11,8 @@ import * as process from 'process';
 window['process'] = process;
 import * as json1 from 'ot-json1';
 
-import '../public/dist/js/jquery.layout-latest.js';
+import '../public/dist/js/jquery-ui-latest';
+import '../public/dist/js/jquery.layout-latest';
 
 
 /* Project Title Editing */
