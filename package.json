@@ -17,6 +17,7 @@
         "express": "^4.17.1",
         "express-ws": "^4.0.0",
         "fs": "0.0.1-security",
+        "md5": "^2.3.0",
         "mkdirp": "^1.0.4",
         "mongo-sanitize": "^1.1.0",
         "mongoose": "^5.11.11",
@@ -34,7 +35,6 @@
         "ot-json1": "^1.0.1",
         "popper.js": "^1.16.1",
         "reconnecting-websocket": "^4.4.0",
-        "sharedb-string-binding": "^1.0.0",
         "webpack": "^5.13.0",
         "webpack-cli": "^4.3.1"
     }

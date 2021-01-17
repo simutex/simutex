@@ -1,8 +1,18 @@
 import "ace-builds";
 import "ace-builds/webpack-resolver";
 import "bootstrap";
+import * as md5 from "md5";
+import * as uuid from "uuid";
+import { AceCursorManager } from "./AceCursorManager";
+
+import sharedb from 'sharedb/lib/client';
+import ReconnectingWebSocket from 'reconnecting-websocket';
+import * as process from 'process';
+window['process'] = process;
+import * as json1 from 'ot-json1';
 
 import '../public/dist/js/jquery.layout-latest.js';
+
 
 /* Project Title Editing */
 $(document).on("dblclick", "#project_title", function () {
@@ -89,16 +99,11 @@ $(document).ready(function () {
     aceEditorLeft.session.setMode("ace/mode/latex");
     aceEditorLeft.setShowPrintMargin(false);
     aceEditorLeft.setAutoScrollEditorIntoView(true);
-    aceEditorLeft.setOptions({
-        enableBasicAutocompletion: true,
-        enableSnippets: true,
-        enableLiveAutocompletion: true
-    });
-    /* if (pdata) {
-        aceEditorLeft.setValue(pdata);
-        compileLaTeX(true);
-    } */
-    aceEditorLeft.moveCursorTo(0, 0);
+    /*     aceEditorLeft.setOptions({
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: true
+        }); */
 });
 
 export function compileLaTeX(force_build = false) {
@@ -133,12 +138,6 @@ $(document).keydown(function (event) {
     return false;
 });
 
-import sharedb from 'sharedb/lib/client';
-import ReconnectingWebSocket from 'reconnecting-websocket';
-import * as process from 'process';
-window['process'] = process;
-import * as json1 from 'ot-json1';
-
 sharedb.types.register(json1.type);
 var socket = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080/api/' + pid);
 var connection = new sharedb.Connection(socket);
@@ -159,12 +158,106 @@ export var doc = connection.get('project_data', pid);
 
 var path = [];
 var suppressed = false;
-var my_id = "noah";
+var my_id = uuid.v4();
 
 doc.subscribe(function (err) {
     if (err) throw err;
     aceEditorLeft.setValue(doc.data);
     aceEditorLeft.moveCursorTo(0, 0);
+
+    var manager = new AceCursorManager(aceEditorLeft.getSession());
+    var sock2 = new WebSocket('ws://' + window.location.hostname + ':3080/api/extras/' + pid);
+
+    let colors = ["#f44336", "#e91e63", "#9c27b0", "#3f51b5", "#673ab7", "#009688", "#ff5722", "#4caf50", "#9a0036"];
+
+    let last_user_ping = {}
+
+    function removeOffline(offline = 5000) {
+        setTimeout(() => {
+            let now = Date.now();
+            for (let username in last_user_ping) {
+                if (now - last_user_ping[username].last > offline) {
+                    $(`#usericon${last_user_ping[username].md5}`).remove();
+                    delete last_user_ping[username];
+                    try {
+                        manager.removeCursor(username);
+                    } catch (e) {
+                        console.log(`User cursor now found: ${username}`);
+                    }
+                }
+            }
+            removeOffline();
+        }, offline);
+    }
+    removeOffline();
+
+    sock2.onmessage = (e) => {
+        let data = JSON.parse(e.data);
+        if (data.isPing) {
+            let usermd5 = undefined;
+            if (data.username in last_user_ping) {
+                usermd5 = last_user_ping[data.username].md5;
+            } else {
+                usermd5 = md5(data.username);
+                last_user_ping[data.username] = { md5: usermd5 };
+            }
+            last_user_ping[data.username].last = Date.now();
+            if (!$(`#usericon${usermd5}`).length) {
+                $('#user-presence').append(`<img id='usericon${usermd5}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded img-thumbnail" style="margin-left:2px;" width="30" height="30">`);
+            }
+        }
+        data.actions.forEach(element => {
+            if (element.action == 'cursorUpdate') {
+                let position = {
+                    start: element.start,
+                    end: element.end
+                }
+                try {
+                    manager.setCursor(data.username, position, !data.isPing);
+                } catch (err) {
+                    let user_color = colors[Math.floor(Math.random() * colors.length)];
+                    manager.addCursor(data.username, data.username, user_color, position);
+                }
+            }
+        });
+    };
+
+    let last_pos = null;
+    function sendPing(isPing = false, override = false) {
+        if (sock2.readyState === WebSocket.OPEN) {
+            const selectionRange = aceEditorLeft.getSelectionRange();
+            var data = {
+                isPing: isPing,
+                actions: [
+                    {
+                        action: 'cursorUpdate',
+                        start: selectionRange.start,
+                        end: selectionRange.end
+                    }
+                ]
+            }
+            if (override || (last_pos !== null &&
+                !(last_pos.start.row == data.actions[0].start.row &&
+                    last_pos.start.column == data.actions[0].start.column &&
+                    last_pos.end.row == data.actions[0].end.row &&
+                    last_pos.end.column == data.actions[0].end.column))) {
+                sock2.send(JSON.stringify(data));
+            }
+            last_pos = data.actions[0];
+        }
+    }
+    aceEditorLeft.on('changeSelection', () => {
+        sendPing(false);
+    });
+
+    function ping() {
+        setTimeout(() => {
+            sendPing(true, true);
+            ping();
+        }, 2500);
+    }
+    ping();
+
     compileLaTeX(true);
     aceEditorLeft.on('change', (delta) => {
         if (!suppressed) {

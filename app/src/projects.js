@@ -8,7 +8,6 @@ const cookierParser = require('cookie-parser');
 const spawn = require('child_process').spawn;
 const uuid = require('uuid');
 const ShareDB = require('sharedb');
-const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 
 const cmdRouter = express.Router({ mergeParams: true });
 cmdRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -22,26 +21,6 @@ const config = require('../../config');
 // Create a second connnection to the MongoDB instance for ShareDB
 const sdb = require('sharedb-mongo')(`mongodb://${config.database.hostname}:${config.database.port}/${config.database.name}`, { mongoOptions: { useUnifiedTopology: true } });
 const backend = new ShareDB({ db: sdb });
-
-/**
- * Create WebSockets for communication
- * 
- * Use express-ws for WebSocket connection using `ws` underneath
- */
-function createCollaborationServer(app) {
-    app.ws('/api/:id', (ws, req) => {
-        console.log(req.params);
-        auth.credentials(req.cookies.u, req.cookies.h, () => {
-            auth.project.modify(req.params.id, req.cookies.u, () => {
-                let metadata = {
-                    userid: req.cookies.u
-                }
-                let stream = new WebSocketJSONStream(ws);
-                backend.listen(stream, metadata);
-            }, () => { })
-        }, () => { });
-    });
-}
 
 /** 
  * Pass custom metadata on to the request agent
@@ -62,6 +41,10 @@ backend.use('submit', (request, callback) => {
     request.op.m.userid = request.agent.custom.userid;
     callback();
 });
+
+function backendListen(stream, metadata) {
+    backend.listen(stream, metadata);
+}
 
 /**
  * Require credential authentication for all requests.
@@ -431,5 +414,5 @@ cmdRouter.post('/build', auth.middleware.project.modify, (req, res) => {
 //export this router to use in our server.js
 module.exports = {
     router,
-    createCollaborationServer
+    backendListen
 };
