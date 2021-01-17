@@ -69,6 +69,16 @@ app.get('/login', (req, res) => {
 });
 
 /**
+ * Routes user to their profile page if authenticated. Otherwise redirects to
+ * login page.
+ */
+app.get('/profile', auth.middleware.credentials, (req, res) => {
+    ejs.renderFile('./app/views/profile.ejs', {}, {}, (err, str) => {
+        res.send(str);
+    })
+});
+
+/**
  * Post request for login page.
  * 
  * Redirects to /projects if authentication is successful.
