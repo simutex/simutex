@@ -38,7 +38,7 @@ function authCredentialsMiddleware(req, res, next, fail = undefined) {
         }
     } else {
         var hashpass = crypto.createHash("sha512").update(req.body.password, 'utf-8').digest('hex');
-        authCredentials(req.cookies.u, req.cookies.h, () => {
+        authCredentials(req.body.username, hashpass, () => {
             if (req.cookies.username === undefined) {
                 res.cookie('u', req.body.username, { maxAge: 7 * 24 * 60 * 60 * 1000 })
                 res.cookie('h', hashpass, { maxAge: 7 * 24 * 60 * 60 * 1000 })
