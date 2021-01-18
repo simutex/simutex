@@ -36,7 +36,7 @@ doc.subscribe(function (err) {
     aceEditorLeft.moveCursorTo(0, 0);
 
     var manager = new AceCursorManager(aceEditorLeft.getSession());
-    var sock2 = new WebSocket('ws://' + window.location.hostname + ':3080/api/extras/' + pid);
+    var sock2 = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080/api/extras/' + pid);
 
     let colors = ["#f44336", "#e91e63", "#9c27b0", "#3f51b5", "#673ab7", "#009688", "#ff5722", "#4caf50", "#9a0036"];
 
