@@ -33,7 +33,7 @@ SimuTex is an in-work collaborative LaTeX editing application available in the b
 5. Start the MongoDB instance
 6. Download `latexmk` and extract it to `simutex/latexmk`
     - You want `latexmk.pl` to be at `simutex/latexmk/latexmk.pl`
-    - You can get `latexmk` from (here)[https://personal.psu.edu/~jcc8/software/latexmk/]
+    - You can get `latexmk` from [here](https://personal.psu.edu/~jcc8/software/latexmk/)
 7. Modify `config.js` to your environment needs
     - The `latexmk.path` variable should be the directory containing `latexmk.pl` e.g.: `simutex/latexmk`
 8. Open a terminal in the repository directory
