@@ -94,7 +94,7 @@ doc.subscribe(function (err) {
 
     let last_pos = null;
     function sendPing(isPing = false, override = false) {
-        if (sock2.readyState === WebSocket.OPEN) {
+        if (sock2.readyState === 1) {
             const selectionRange = aceEditorLeft.getSelectionRange();
             var data = {
                 isPing: isPing,

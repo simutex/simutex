@@ -9,6 +9,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 const ews = require('express-ws')(app);
 const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
+const ReconnectingWebSocket = require("reconnecting-websocket").default;
 
 const config = require('./config');
 const auth = require('./app/src/auth');
@@ -136,7 +137,7 @@ function liveProjectCleanup() {
     setTimeout(() => {
         for (let project in live_projects) {
             for (let wsi = 0; wsi < live_projects[project].length; wsi++) {
-                if (live_projects[project][wsi].readyState === WebSocket.CLOSING || live_projects[project][wsi].readyState === WebSocket.CLOSED) {
+                if (live_projects[project][wsi].readyState === 2 || live_projects[project][wsi].readyState === 3) {
                     live_projects[project].splice(wsi, 1);
                 }
             }
@@ -161,7 +162,7 @@ app.ws('/api/extras/:id', (ws, req) => {
             ws.on('message', (msg) => {
                 for (let clientIndex = 0; clientIndex < live_projects[ws.project].length; clientIndex++) {
                     let client = live_projects[ws.project][clientIndex];
-                    if (client !== ws && client.readyState == WebSocket.OPEN) {
+                    if (client !== ws && client.readyState === 1) {
                         let data = JSON.parse(msg);
                         data.username = req.cookies.u;
                         client.send(JSON.stringify(data));
