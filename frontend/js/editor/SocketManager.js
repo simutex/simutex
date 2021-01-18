@@ -73,7 +73,7 @@ doc.subscribe(function (err) {
             }
             last_user_ping[data.username].last = Date.now();
             if (!$(`#usericon${usermd5}`).length) {
-                $('#user-presence').append(`<img id='usericon${usermd5}' title='${data.username}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded img-thumbnail" style="margin-left:2px;" width="28" height="28">`);
+                $('#user-presence').append(`<img id='usericon${usermd5}' title='${data.username}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded-lg border-light" style="margin-left:2px;" width="26" height="26">`);
             }
         }
         data.actions.forEach(element => {
