@@ -1,4 +1,4 @@
-export class AceCursorMarker {
+class AceCursorMarker {
     constructor(session,
         cursorId,
         label,
@@ -198,4 +198,8 @@ export class AceCursorMarker {
             this._blink = true;
         }, 2000);
     }
+}
+
+module.exports = {
+    AceCursorMarker: AceCursorMarker
 }

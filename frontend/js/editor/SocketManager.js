@@ -5,7 +5,7 @@ const { AceCursorManager } = require("./AceCursorManager");
 const sharedb = require("sharedb/lib/client");
 const json1 = require('ot-json1');
 const { CompileLaTeX } = require("./CompileLaTeX");
-import ReconnectingWebSocket from 'reconnecting-websocket';
+const ReconnectingWebSocket = require("reconnecting-websocket").default;
 
 sharedb.types.register(json1.type);
 var socket = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080/api/' + pid, [], {});
