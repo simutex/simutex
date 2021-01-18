@@ -1,145 +1,14 @@
-import "ace-builds";
-import "ace-builds/webpack-resolver";
-import "bootstrap";
-import * as md5 from "md5";
-import * as uuid from "uuid";
-import { AceCursorManager } from "./AceCursorManager";
-
-import sharedb from 'sharedb/lib/client';
+const AceManager = require("./AceManager");
+const md5 = require("md5");
+const uuid = require("uuid");
+const { AceCursorManager } = require("./AceCursorManager");
+const sharedb = require("sharedb/lib/client");
+const json1 = require('ot-json1');
+const { CompileLaTeX } = require("./CompileLaTeX");
 import ReconnectingWebSocket from 'reconnecting-websocket';
-import * as process from 'process';
-window['process'] = process;
-import * as json1 from 'ot-json1';
-
-import '../public/dist/js/jquery.layout-latest.js';
-
-
-/* Project Title Editing */
-$(document).on("dblclick", "#project_title", function () {
-    let old_project_title = $("#project_title").text().trim();
-
-    function updateTitle() {
-        console.log("out");
-        var new_project_name = $("#new_project_title").val().trim();
-        if (new_project_name == "") {
-            $("#project_title").text(old_project_title);
-        } else {
-            $.post('./settings/rename', { data: new_project_name }, (data) => {
-                if (data == "M") {
-                    $("#project_title").text(new_project_name);
-                    $(document).prop('title', new_project_name + ' | ' + bname);
-                } else {
-                    $("#project_title").text(old_project_title);
-                }
-            });
-        }
-    }
-
-    let current = $(this).text();
-    $("#project_title").html(`<form class="form-inline" onsubmit="return false;">
-        <input id="new_project_title" class="form-control mr-sm-2" type="search" placeholder="${current}" aria-label="Search">
-    </form>`);
-    $("#new_project_title").focus();
-
-    $("#new_project_title").focus(function () {
-        console.log('in');
-    }).blur(() => {
-        updateTitle();
-    }).keypress((e) => {
-        if (e.which == 13) {
-            updateTitle();
-        }
-    });
-});
-
-
-// Enable Tooltips
-$(() => {
-    $('[data-toggle="tooltip"]').tooltip()
-});
-
-
-// Menu Toggle Script
-$("#menu-toggle").click((e) => {
-    e.preventDefault();
-    $("#wrapper").toggleClass("toggled");
-});
-
-var aceEditorLeft = null;
-$(document).ready(function () {
-    $('#editor-container').layout({
-        closable: false,
-
-        // Center Options
-        size: 0.5,
-        minSize: 0.25,
-        maxSize: 0.75,
-        livePaneResizing: true,
-        liveContentResizing: true,
-
-        // East Options
-        east__size: 0.5,
-        east__minSize: 0.25,
-        east__maxSize: 0.75
-    });
-
-    $(".ui-layout-resizer-east").bind("mousedown", (e) => {
-        $("#editor-left").hide();
-        $("#pdf-viewer").hide();
-    });
-
-    $(".ui-layout-resizer-east").bind("mouseup dragstop", () => {
-        $("#editor-left").show();
-        $("#pdf-viewer").show();
-    });
-
-    ace.require("ace/ext/language_tools");
-    aceEditorLeft = ace.edit("editor-left");
-    aceEditorLeft.setTheme("ace/theme/textmate");
-    aceEditorLeft.session.setMode("ace/mode/latex");
-    aceEditorLeft.setShowPrintMargin(false);
-    aceEditorLeft.setAutoScrollEditorIntoView(true);
-    /*     aceEditorLeft.setOptions({
-            enableBasicAutocompletion: true,
-            enableSnippets: true,
-            enableLiveAutocompletion: true
-        }); */
-});
-
-export function compileLaTeX(force_build = false) {
-    if (aceEditorLeft != null) {
-        $.post('./build', { data: aceEditorLeft.getValue(), build: force_build ? true : $('#buildProject').prop('checked') }, (data) => {
-            if (data.charAt(0) == 'E' || data.charAt(0) == 'M') {
-                if (data.charAt(0) == 'E' && !force_build) {
-                    if (data == 'E0') {
-                        alert('An error has occurred. The project was not saved.');
-                    } else {
-                        alert("Compilation timed out! " + data);
-                    }
-                } else if (data.charAt(0) == 'M') {
-                    if (data == 'M0') {
-                        console.log('Saved.');
-                    }
-                }
-            } else {
-                /* $("#pdf-viewer").attr("data", "data:application/pdf;base64," + data); */
-                $("#pdf-viewer").attr("data", data)
-                $("#pdf-viewer").hide();
-                $("#pdf-viewer").show();
-            }
-        });
-    }
-}
-
-$(document).keydown(function (event) {
-    if (!(String.fromCharCode(event.which).toLowerCase() == 's' && event.ctrlKey) && !(event.which == 19)) return true;
-    compileLaTeX();
-    event.preventDefault();
-    return false;
-});
 
 sharedb.types.register(json1.type);
-var socket = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080/api/' + pid);
+var socket = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080/api/' + pid, [], {});
 var connection = new sharedb.Connection(socket);
 
 socket.addEventListener('open', function () {
@@ -154,7 +23,7 @@ socket.addEventListener('error', function () {
     console.log('Error');
 });
 
-export var doc = connection.get('project_data', pid);
+var doc = connection.get('project_data', pid);
 
 var path = [];
 var suppressed = false;
@@ -162,6 +31,7 @@ var my_id = uuid.v4();
 
 doc.subscribe(function (err) {
     if (err) throw err;
+    let aceEditorLeft = AceManager.get();
     aceEditorLeft.setValue(doc.data);
     aceEditorLeft.moveCursorTo(0, 0);
 
@@ -203,7 +73,7 @@ doc.subscribe(function (err) {
             }
             last_user_ping[data.username].last = Date.now();
             if (!$(`#usericon${usermd5}`).length) {
-                $('#user-presence').append(`<img id='usericon${usermd5}' title='${data.username}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded img-thumbnail" style="margin-left:2px;" width="30" height="30">`);
+                $('#user-presence').append(`<img id='usericon${usermd5}' title='${data.username}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded img-thumbnail" style="margin-left:2px;" width="28" height="28">`);
             }
         }
         data.actions.forEach(element => {
@@ -258,7 +128,7 @@ doc.subscribe(function (err) {
     }
     ping();
 
-    compileLaTeX(true);
+    CompileLaTeX(true);
     aceEditorLeft.on('change', (delta) => {
         if (!suppressed) {
             const aceDoc = aceEditorLeft.getSession().getDocument();
@@ -309,6 +179,7 @@ doc.subscribe(function (err) {
 
 function opTransform(ops) {
     function opToDelta(op) {
+        let aceEditorLeft = AceManager.get();
         const index = op.p[op.p.length - 1];
         const pos = aceEditorLeft.getSession().getDocument().indexToPosition(index, 0);
         const start = pos;
