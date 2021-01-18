@@ -136,7 +136,7 @@ function liveProjectCleanup() {
     setTimeout(() => {
         for (let project in live_projects) {
             for (let wsi = 0; wsi < live_projects[project].length; wsi++) {
-                if (live_projects[project][wsi].readyState === 2 || live_projects[project][wsi].readyState === 3) {  // 2 === ws.CLOSING, 3 === ws.CLOSED
+                if (live_projects[project][wsi].readyState === WebSocket.CLOSING || live_projects[project][wsi].readyState === WebSocket.CLOSED) {
                     live_projects[project].splice(wsi, 1);
                 }
             }
@@ -161,7 +161,7 @@ app.ws('/api/extras/:id', (ws, req) => {
             ws.on('message', (msg) => {
                 for (let clientIndex = 0; clientIndex < live_projects[ws.project].length; clientIndex++) {
                     let client = live_projects[ws.project][clientIndex];
-                    if (client !== ws && client.readyState == ws.OPEN) {
+                    if (client !== ws && client.readyState == WebSocket.OPEN) {
                         let data = JSON.parse(msg);
                         data.username = req.cookies.u;
                         client.send(JSON.stringify(data));
