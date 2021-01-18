@@ -3,7 +3,7 @@ const webpack = require('webpack');
 
 module.exports = {
     entry: {
-        editor: './frontend/js/editor.js'
+        editor: path.resolve(__dirname, 'frontend', 'js', 'editor', 'index.js')
     },
     plugins: [
         new webpack.ProvidePlugin({
