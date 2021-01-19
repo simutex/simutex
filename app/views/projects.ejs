@@ -45,6 +45,8 @@
             <th scope="col">#</th>
             <th scope="col">Title</th>
             <th scope="col">Project Owner</th>
+            <th scope="col">Collaborators</th>
+            <th scope="col">Viewers</th>
             <th scope="col">Last edited</th>
             <th scope="col">Actions</th>
           </tr>
@@ -57,6 +59,8 @@
                 <th scope="row"><%= i %></th>
                 <td><a href="<%= `/projects/${projects_data[i]['id']}` %>"><%= projects_data[i]['title'] %></a></td>
                 <td><%= projects_data[i]['owner'] %></td>
+                <td><%= projects_data[i]['collaborators'] %></td>
+                <td><%= projects_data[i]['viewers'] %></td>
                 <td>@mdo</td>
             </tr>
                 <% }

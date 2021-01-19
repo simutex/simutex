@@ -55,7 +55,9 @@ router.use(auth.middleware.credentials);
  * Show a list of all the users projects.
  */
 router.get('/', (req, res) => {
-    db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] }).project({ title: true, id: true , owner: true}).toArray((err, projects) => {
+    db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] })
+        .project({ title: true, id: true , owner: true, collaborators: true, viewers: true})
+        .toArray((err, projects) => {
         ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects }, {}, (err, str) => {
             res.send(str);
         });
