@@ -16,27 +16,26 @@
 
     <div class="d-flex">
 
-        <div class="bg-light border-right" id="sidebar-wrapper">
-            <div class="sidebar-heading text-truncate" data-toggle="tooltip" data-placement="right" title="SimuTex" style="cursor: default;">SimuTex</div>
-            <div class="list-group list-group-flush" style="height:calc(100%);">
-                <a href="/projects/new" class="btn btn-primary">Create new project</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Dashboard</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Shortcuts</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Overview</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Events</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Profile</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Status</a>
-            </div>
-        </div>
-
         <div class="col">
 
         <!-- Search Bar -->
         <nav class="navbar navbar-light bg-light">
-            <form class="form-inline">
-                <input class="form-control mr-sm-2" onkeyup="searchFunction()" type="search" placeholder="Search the table..." aria-label="Search" id="tableSearch">
-                <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
-            </form>
+
+            <div class="col-sm-4">
+                <form class="form-inline">
+                    <input class="form-control" onkeyup="searchFunction()" type="search" placeholder="Search the table..." aria-label="Search" id="tableSearch">
+                    <button class="btn btn-outline-primary" type="submit">Search</button>
+                </form>
+            </div>
+
+            <div class="col-sm-4">
+                <a href="/projects/new" class="btn btn-primary">Create new project</a>
+            </div>
+
+            <div class="col-sm-4">
+                <a class="btn btn-outline-danger" type="submit" href="/logout" style="float: right;">Logout</a>
+            </div>
+
         </nav>
 
         <table class="table table-dark table-hover" id="projectTable">
