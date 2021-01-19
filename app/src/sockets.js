@@ -99,18 +99,16 @@ function createWebSockets(app) {
 };
 
 function broadcastToProject(project, username, data, sender = undefined) {
-    if (!data.isPing) {
-        data.username = username;
-        data = JSON.stringify(data);
-        if (project in live_projects) {
-            for (let clientIndex = 0; clientIndex < live_projects[project].length; clientIndex++) {
-                let client = live_projects[project][clientIndex];
-                if (client.readyState === 1) {
-                    if (sender === undefined) {
-                        client.send(data);
-                    } else if (sender !== client) {
-                        client.send(data);
-                    }
+    data.username = username;
+    data = JSON.stringify(data);
+    if (project in live_projects) {
+        for (let clientIndex = 0; clientIndex < live_projects[project].length; clientIndex++) {
+            let client = live_projects[project][clientIndex];
+            if (client.readyState === 1) {
+                if (sender === undefined) {
+                    client.send(data);
+                } else if (sender !== client) {
+                    client.send(data);
                 }
             }
         }
