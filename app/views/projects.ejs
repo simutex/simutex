@@ -56,7 +56,7 @@
             <tr>
                 <th scope="row"><%= i %></th>
                 <td><a href="<%= `/projects/${projects_data[i]['id']}` %>"><%= projects_data[i]['title'] %></a></td>
-                <td>Otto</td>
+                <td><%= projects_data[i]['owner'] %></td>
                 <td>@mdo</td>
             </tr>
                 <% }
