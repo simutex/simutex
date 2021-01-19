@@ -45,6 +45,9 @@ var projectsRoute = require('./app/src/projects.js');
 const sanitize = require('mongo-sanitize');
 app.use('/projects', projectsRoute.router);
 
+var profile = require('./app/src/profile.js');
+app.use('/profile', profile.router);
+
 /**
  * Main page.
  * 
@@ -75,7 +78,7 @@ app.get('/login', (req, res) => {
 app.get('/profile', auth.middleware.credentials, (req, res) => {
     ejs.renderFile('./app/views/profile.ejs', {}, {}, (err, str) => {
         res.send(str);
-    })
+    });
 });
 
 /**
@@ -149,4 +152,4 @@ app.ws('/api/extras/:id', (ws, req) => {
             });
         }, () => { })
     }, () => { });
-})
+});

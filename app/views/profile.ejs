@@ -1,5 +1,91 @@
-<html>
-    <body>
-        future profile page
-    </body>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>Profile</title> 
+
+    <!-- Bootstrap core CSS -->
+    <link type="text/css" rel="stylesheet" href="/dist/css/bootstrap.min.css">
+</head>
+
+<body>
+    <!-- Title -->
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>Your Profile</h2>
+            <span class="font-italic text-dark">Hello, <%=user%></span>
+        </div>
+    </div>
+
+    <!-- Display username and show change name input -->
+    <div class="rounded shadow p-3 mb-5 bg-white">
+        <h5>Change Username</h5><br>
+        <table style="width:35%">
+            <tr>
+                <th>Username:</th>
+                <td class="font-italic text-dark" style="margin-right:2.5em;"><%= user %></td>
+            </tr>
+            <!-- Form to submit name change -->
+            <form class="form-inline" onsubmit="changeUsername('<%= user %>', document.getElementById('candidateUsername').value);">
+                <tr>
+                    <th>New Username:</th>
+                    <th>
+                        <input id="candidateUsername" name="username" style="margin-right:2.5em;">
+                    </th>
+                </tr>
+                <tr>
+                    <th>
+                        <br>
+                        <button class="btn btn-primary" type="submit">Change Username</button>
+                    </th>
+                </tr>
+            </form>
+        </table>   
+    </div>
+
+    <!-- Change password -->
+    <div class="rounded shadow p-3 mb-5 bg-white">
+        <h5>Change Password</h5><br>
+        <form class="form-inline" method="post" onsubmit="">
+            <table style="width:35%">
+                <tr>
+                    <th>Old Password:</th>
+                    <th>
+                        <input type="password" id="oldPassword" name="oldPassword" style="margin-right:2.5em;">
+                    </th>
+                </tr>
+                <tr>
+                    <th>New Password:</th>
+                    <th>
+                        <input type="password" id="newPassword1" name="newPassword1" style="margin-right:2.5em;">
+                    </th>
+                </tr>
+                <tr>
+                    <th>New Password (Confirm):</th>
+                    <th>
+                        <input type="password" id="newPassword2" name="newPassword2" style="margin-right:2.5em;">
+                    </th>
+                </tr>
+                <tr>
+                    <th>
+                        <br>
+                        <button class="btn btn-primary" type="submit">Change Password</button>
+                    </th>
+                </tr>
+            </table>
+        </form>
+    </div>
+
+    <!-- jQuery Libraries -->
+    <script type="text/javascript" src="/dist/js/jquery-latest.js"></script>
+
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Profile core JavaScript -->
+    <script type="text/javascript" src="/dist/js/edit-profile.js"></script>
+</body>
 </html>
