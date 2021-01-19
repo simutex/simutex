@@ -61,7 +61,7 @@
                 <td><%= projects_data[i]['owner'] %></td>
                 <td><%= projects_data[i]['collaborators'] %></td>
                 <td><%= projects_data[i]['viewers'] %></td>
-                <td>@mdo</td>
+                <td><%= edit_map[projects_data[i]['id']] %> edited at <%= time_map[projects_data[i].id] %></td>
             </tr>
                 <% }
             } %>

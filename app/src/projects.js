@@ -54,11 +54,42 @@ router.use(auth.middleware.credentials);
 /**
  * Show a list of all the users projects.
  */
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+
+    // Create array of last modified timeStamps for each project
+
+    let timeStamps = [];
+    let timeMap = {};
+    findMTime = db.get().collection('project_data').find({});
+    await findMTime.forEach(
+        doc => {
+            timeStamps.push(doc._m.mtime);
+            let forConversion = new Date(doc._m.mtime).toString();
+            let splitter = forConversion.split("T");
+            console.log("Last edited on: " + splitter[0]);
+            timeMap[doc._id] = splitter[0];
+        }
+    );
+    console.log(timeStamps)
+
+    // Create a map for {project UID : last modification timeStamp} , filtering on previously
+    // created array
+    let editMap = {};
+    lastEdits = db.get().collection('o_project_data').find({ "m.ts": { $in: timeStamps } });
+    await lastEdits.forEach(
+        doc => {
+            // console.log(doc);
+            editMap[doc.d] = doc.m.userid;
+        }
+    );
+    // await console.log(editMap);
+    // console.log("AWAITED PROPERLY")
     db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] })
         .project({ title: true, id: true , owner: true, collaborators: true, viewers: true})
         .toArray((err, projects) => {
-        ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects }, {}, (err, str) => {
+        // console.log("SHOULD BE AFTER AWAIT");
+        console.log(timeMap)
+        ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
             res.send(str);
         });
     });
