@@ -7,7 +7,6 @@ const bodyParser = require('body-parser');
 const cookierParser = require('cookie-parser');
 const spawn = require('child_process').spawn;
 const uuid = require('uuid');
-const ShareDB = require('sharedb');
 
 const cmdRouter = express.Router({ mergeParams: true });
 cmdRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -17,34 +16,7 @@ cmdRouter.use(cookierParser());
 const db = require('./db');
 const auth = require('./auth');
 const config = require('../../config');
-
-// Create a second connnection to the MongoDB instance for ShareDB
-const sdb = require('sharedb-mongo')(`mongodb://${config.database.hostname}:${config.database.port}/${config.database.name}`, { mongoOptions: { useUnifiedTopology: true } });
-const backend = new ShareDB({ db: sdb });
-
-/** 
- * Pass custom metadata on to the request agent
- */
-backend.use('connect', (request, callback) => {
-    // Clone request to avoid mutation after connection
-    const requestJson = JSON.stringify(request.req || {});
-    const requestData = JSON.parse(requestJson);
-
-    Object.assign(request.agent.custom, requestData);
-    callback();
-});
-
-/**
- * Assign the operation user ID to the user account ID
- */
-backend.use('submit', (request, callback) => {
-    request.op.m.userid = request.agent.custom.userid;
-    callback();
-});
-
-function backendListen(stream, metadata) {
-    backend.listen(stream, metadata);
-}
+const sockets = require('./sockets');
 
 /**
  * Require credential authentication for all requests.
@@ -138,7 +110,7 @@ cmdRouter.get('/edit', (req, res) => {
                     pisviewer: project.viewers.includes(req.cookies.u)
                 }
 
-                var connection = backend.connect();
+                var connection = sockets.getConnection();
                 var doc = connection.get('project_data', req.params.id);
                 doc.fetch((err) => {
                     if (err) throw err;
@@ -166,7 +138,9 @@ cmdRouter.get('/edit', (req, res) => {
  * Send the PDF document to the browser for rendering.
  */
 cmdRouter.get('/view', auth.middleware.project.access, (req, res) => {
-    res.sendFile(req.params.id + '/out.pdf', { root: 'projects' });
+    res.sendFile(req.params.id + '/out.pdf', { root: 'projects' }, (err) => {
+        if (err) throw err;
+    });
 });
 
 /**
@@ -382,9 +356,19 @@ cmdRouter.post('/build', auth.middleware.project.modify, (req, res) => {
                 latexmk.on("close", code => {
                     console.log("code: " + code);
                     if (code == 0) {
-                        res.send(`http://${config.server.hostname}:${config.server.port}/projects/${req.params.id}/view`);
+                        let output_url = `http://${config.server.hostname}:${config.server.port}/projects/${req.params.id}/view`;
+                        let broadcast_data = {
+                            actions: [
+                                {
+                                    action: 'viewUpdate',
+                                    data: output_url
+                                }
+                            ]
+                        }
+                        sockets.broadcastToProject(req.params.id, req.cookies.u, broadcast_data);
+                        res.send('Build broadcast occurred.');
+                        /* res.send(`http://${config.server.hostname}:${config.server.port}/projects/${req.params.id}/view`); */
                         /* res.send(fs.readFileSync(build_dir + '/out.pdf', { encoding: 'base64' })); */
-
                         //ws.send(build_dir + "/out.pdf");
                     } else {
                         res.send("E2");
@@ -413,6 +397,5 @@ cmdRouter.post('/build', auth.middleware.project.modify, (req, res) => {
 
 //export this router to use in our server.js
 module.exports = {
-    router,
-    backendListen
+    router
 };
