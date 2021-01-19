@@ -4,7 +4,7 @@ const uuid = require("uuid");
 const { AceCursorManager } = require("./AceCursorManager");
 const sharedb = require("sharedb/lib/client");
 const json1 = require('ot-json1');
-const { CompileLaTeX } = require("./CompileLaTeX");
+const ViewerManager = require("./ViewerManager");
 const ReconnectingWebSocket = require("reconnecting-websocket").default;
 
 sharedb.types.register(json1.type);
@@ -88,6 +88,8 @@ doc.subscribe(function (err) {
                     let user_color = colors[Math.floor(Math.random() * colors.length)];
                     manager.addCursor(data.username, data.username, user_color, position);
                 }
+            } else if (element.action == 'viewUpdate') {
+                ViewerManager.setViewer(element.data);
             }
         });
     };
@@ -128,7 +130,7 @@ doc.subscribe(function (err) {
     }
     ping();
 
-    CompileLaTeX(true);
+    ViewerManager.compileLaTeX(true);
     aceEditorLeft.on('change', (delta) => {
         if (!suppressed) {
             const aceDoc = aceEditorLeft.getSession().getDocument();
