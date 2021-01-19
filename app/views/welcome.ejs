@@ -24,6 +24,21 @@
             <input type="password" id="inputPasswordB" name="passwordB" class="form-control" placeholder="Repeat password" required>
             <button class="btn btn-lg btn-primary btn-block" type="submit">Confirm Password</button>
         </form>
+        <br>
+        <div class="rounded shadow p-3 mb-5 bg-white" style="width:50%; margin-left:25%">
+            <div class="row">
+                <div class="col">
+                    <h5 class="text-center">Configuration Check</h5>
+                    <hr>
+                    <% if (latexmk) { %>
+                        <span class="text-success">Found latexmk!</span>
+                    <% } else { %>
+                        <span class="text-danger">Could not find latexmk.</span><br>
+                        <span class="text-danger">Path: <%= path %></span>
+                    <% } %>
+                </div>
+            </div>
+        </div>
     </div>
 
 </body>

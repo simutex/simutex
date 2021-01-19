@@ -1,6 +1,6 @@
-import { AceCursorMarker } from "./AceCursorMarker";
+const { AceCursorMarker } = require("./AceCursorMarker");
 
-export class AceCursorManager {
+class AceCursorManager {
     constructor(session) {
         this._session = session;
         this._cursors = {};
@@ -55,4 +55,8 @@ export class AceCursorManager {
 
         return cursor;
     }
+}
+
+module.exports = {
+    AceCursorManager: AceCursorManager
 }
