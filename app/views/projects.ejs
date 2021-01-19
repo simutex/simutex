@@ -14,26 +14,68 @@
 
 <body class="text-center">
 
-    <div class="container">
-        <div class="row m-3">
-            <div class="col">
+    <div class="d-flex">
+
+        <div class="bg-light border-right" id="sidebar-wrapper">
+            <div class="sidebar-heading text-truncate" data-toggle="tooltip" data-placement="right" title="SimuTex" style="cursor: default;">SimuTex</div>
+            <div class="list-group list-group-flush" style="height:calc(100%);">
                 <a href="/projects/new" class="btn btn-primary">Create new project</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Dashboard</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Shortcuts</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Overview</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Events</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Profile</a>
+                <a href="#" class="list-group-item list-group-item-action bg-light">Status</a>
             </div>
         </div>
-        <% if (projects_data) {
-            for (let i = 0; i < projects_data.length; i++) { %>
-        <div class="row m-3">
-            <div class="col text-center">
-                <a href="<%= `/projects/${projects_data[i]['id']}` %>"><%= projects_data[i]['title'] %></a>
-            </div>
+
+        <div class="col">
+
+        <!-- Search Bar -->
+        <nav class="navbar navbar-light bg-light">
+            <form class="form-inline">
+                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </nav>
+
+        <table class="table table-dark table-hover">
+            <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Title</th>
+            <th scope="col">Project Owner</th>
+            <th scope="col">Last edited</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+            <% if (projects_data) {
+                for (let i = 0; i < projects_data.length; i++) { %>
+            <tr>
+                <th scope="row"><%= i %></th>
+                <td><a href="<%= `/projects/${projects_data[i]['id']}` %>"><%= projects_data[i]['title'] %></a></td>
+                <td>Otto</td>
+                <td>@mdo</td>
+            </tr>
+                <% }
+            } %>
+
+        </tbody>
+
+        </table>
+
         </div>
-            <% }
-        } %>
+
+
+
+
     </div>
 
     <!-- jQuery Libraries -->
     <script type="text/javascript" src="/dist/js/jquery-latest.js"></script>
-    
+
     <!-- Bootstrap core JavaScript -->
     <script type="text/javascript" src="/dist/js/bootstrap.bundle.min.js"></script>
 

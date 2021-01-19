@@ -22,7 +22,7 @@ const config = require('../../config');
 const sdb = require('sharedb-mongo')(`mongodb://${config.database.hostname}:${config.database.port}/${config.database.name}`, { mongoOptions: { useUnifiedTopology: true } });
 const backend = new ShareDB({ db: sdb });
 
-/** 
+/**
  * Pass custom metadata on to the request agent
  */
 backend.use('connect', (request, callback) => {
@@ -115,7 +115,7 @@ cmdRouter.get('/', (req, res) => {
 
 /**
  * Provide the document editor for the requested project.
- * 
+ *
  * If the user does not have modify permissions, then they will be routed to view the document.
  * If the user does not have access permissions, then they will be routed to their projects.
  */
@@ -178,7 +178,7 @@ cmdRouter.get('/pdf', auth.middleware.project.access, (req, res) => {
 
 /**
  * Provide the raw text of the specified document.
- * 
+ *
  * Returned page body does not contain any text/data other than the document.
  * Formatting may not appear as shown in the editor.
  */
@@ -189,8 +189,8 @@ cmdRouter.get('/raw', auth.middleware.project.access, (req, res) => {
 
 /**
  * Return a raw text view of the document.
- * 
- * Formatting should be identical, with the exception of tab length, to the editor. 
+ *
+ * Formatting should be identical, with the exception of tab length, to the editor.
  */
 cmdRouter.get('/text', auth.middleware.project.access, (req, res) => {
     res.set('Content-Type', 'text/html');
@@ -199,7 +199,7 @@ cmdRouter.get('/text', auth.middleware.project.access, (req, res) => {
 
 /**
  * Downloads the output PDF document, if it exists.
- * 
+ *
  * Sends a basic messages if the output PDF does not exist.
  */
 cmdRouter.get('/download', auth.middleware.project.access, (req, res) => {
@@ -213,13 +213,13 @@ cmdRouter.get('/download', auth.middleware.project.access, (req, res) => {
 
 /**
  * Deletes a project.
- * 
+ *
  * Requires owner permissions.
  */
 cmdRouter.get('/delete', auth.middleware.project.owner, (req, res) => {
     switch (config.database.project.delete) {
         case 'all':
-            // Delete all data from `projects`, `project_data`, and `o_project_data` and on-disk    
+            // Delete all data from `projects`, `project_data`, and `o_project_data` and on-disk
             db.get().collection('projects').deleteOne({ id: req.params.id }, (err, result_one_a) => {
                 db.get().collection('project_data').deleteOne({ _id: req.params.id }, (err, result_one_b) => {
                     db.get().collection('o_project_data').deleteMany({ d: req.params.id }, (err, result_many) => {
