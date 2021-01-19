@@ -66,11 +66,11 @@ router.get('/', async (req, res) => {
             timeStamps.push(doc._m.mtime);
             let forConversion = new Date(doc._m.mtime).toString();
             let splitter = forConversion.split("T");
-            console.log("Last edited on: " + splitter[0]);
+            // console.log("Last edited on: " + splitter[0]);
             timeMap[doc._id] = splitter[0];
         }
     );
-    console.log(timeStamps)
+    // console.log(timeStamps)
 
     // Create a map for {project UID : last modification timeStamp} , filtering on previously
     // created array
@@ -88,7 +88,7 @@ router.get('/', async (req, res) => {
         .project({ title: true, id: true , owner: true, collaborators: true, viewers: true})
         .toArray((err, projects) => {
         // console.log("SHOULD BE AFTER AWAIT");
-        console.log(timeMap)
+        // console.log(timeMap)
         ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
             res.send(str);
         });

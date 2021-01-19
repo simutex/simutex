@@ -34,12 +34,12 @@
         <!-- Search Bar -->
         <nav class="navbar navbar-light bg-light">
             <form class="form-inline">
-                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                <input class="form-control mr-sm-2" onkeyup="searchFunction()" type="search" placeholder="Search the table..." aria-label="Search" id="tableSearch">
                 <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
             </form>
         </nav>
 
-        <table class="table table-dark table-hover">
+        <table class="table table-dark table-hover" id="projectTable">
             <thead>
           <tr>
             <th scope="col">#</th>
@@ -69,6 +69,69 @@
         </tbody>
 
         </table>
+
+        <script>
+            function searchFunction() {
+
+              // Declare variables
+              var input, filter, table, tr, td, i, txtValue;
+              input = document.getElementById("tableSearch");
+              filter = input.value.toUpperCase();
+              table = document.getElementById("projectTable");
+              tr = table.getElementsByTagName("tr");
+
+              // Loop through all table rows, and hide those who don't match the search query
+              for (i = 0; i < tr.length; i++) {
+                // Skip column names...basically all the column headers...
+                if (i == 0) {
+                    continue;
+                }
+
+                // Content for each row in table...
+                let textContentArray = [];
+
+                th = tr[i].getElementsByTagName("th");
+                for (element of th) {
+                    if (element) {
+                        textContentArray.push(element.textContent || element.innerText);
+                        // console.log(element);
+                    }
+                }
+
+                td = tr[i].getElementsByTagName("td")
+                for (element of td) {
+                    if (element) {
+                        textContentArray.push(element.textContent || element.innerText);
+                        // console.log(element);
+                    }
+                }
+                // console.log("----------");
+
+                let found = false;
+                // console.log(textContentArray)
+                for (j = 0; j < textContentArray.length; j++) {
+                    // For now lets skip the columns where Date information is included
+                    // Don't care about the numbers in the date, editors are already accounted for
+                    if (j == 5) {
+                        continue;
+                    }
+
+                    let textContent = textContentArray[j];
+                    if (textContent) {
+                        if (textContent.toUpperCase().indexOf(filter) > -1) {
+                            found = true;
+                        }
+                    }
+                }
+
+                if (found) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+              }
+            }
+        </script>
 
         </div>
 
