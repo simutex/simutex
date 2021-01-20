@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>Profile</title> 
+
+    <!-- Bootstrap core CSS -->
+    <link type="text/css" rel="stylesheet" href="/dist/css/bootstrap.min.css">
+</head>
+
+<body>
+    <!-- Title -->
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>Your Profile</h2>
+            <span class="font-italic text-dark">Hello, <%=user%></span>
+        </div>
+    </div>
+
+    <!-- Display username and show change name input -->
+    <div class="rounded shadow p-3 mb-5 bg-white">
+        <h5>Display Name</h5><br>
+        <table style="width:35%">
+            <tr>
+                <th>Username:</th>
+                <td class="font-italic text-dark" style="margin-right:2.5em;"><%= user %></td>
+            </tr>
+            <tr>
+                <th>Display Name:</th>
+                <td class="font-italic text-dark" style="margin-right:2.5em;"><%= displayName %></td>
+            </tr>
+            <!-- Form to submit name change -->
+            <form class="form-inline" onsubmit="changeDisplayName('<%= displayName %>', document.getElementById('candidateDisplayName').value);">
+                <tr>
+                    <th>New Display Name:</th>
+                    <th>
+                        <input id="candidateDisplayName" name="displayName" style="margin-right:2.5em;">
+                    </th>
+                </tr>
+                <tr>
+                    <th>
+                        <br>
+                        <button class="btn btn-primary" type="submit">Change Display Name</button>
+                    </th>
+                </tr>
+            </form>
+        </table>   
+    </div>
+
+    <!-- Change password -->
+    <div class="rounded shadow p-3 mb-5 bg-white">
+        <h5>Password</h5><br>
+        <form class="form-inline" method="post" action="/profile/changepassword" onsubmit="return isValidPassword(document.getElementById('newPassword1').value,
+                                                                                                                  document.getElementById('newPassword2').value);">
+            <table style="width:35%">
+                <tr>
+                    <th>Old Password:</th>
+                    <th>
+                        <input type="password" id="oldPassword" name="oldPassword" style="margin-right:2.5em;">
+                    </th>
+                </tr>
+                <tr>
+                    <th>New Password:</th>
+                    <th>
+                        <input type="password" id="newPassword1" name="newPassword1" style="margin-right:2.5em;">
+                    </th>
+                </tr>
+                <tr>
+                    <th>New Password (Confirm):</th>
+                    <th>
+                        <input type="password" id="newPassword2" name="newPassword2" style="margin-right:2.5em;">
+                    </th>
+                </tr>
+                <tr>
+                    <th>
+                        <br>
+                        <button class="btn btn-primary" type="submit">Change Password</button>
+                    </th>
+                </tr>
+            </table>
+        </form>
+        <!-- Displays error message present in EJS variables if any provided -->
+        <% if (error) { %>
+        <br>
+        <div class="alert alert-danger" role="alert">
+            Error: <%= error %>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- jQuery Libraries -->
+    <script type="text/javascript" src="/dist/js/jquery-latest.js"></script>
+
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Profile core JavaScript -->
+    <script type="text/javascript" src="/dist/js/edit-profile.js"></script>
+</body>
+</html>

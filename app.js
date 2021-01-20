@@ -45,6 +45,9 @@ var projectsRoute = require('./app/src/projects.js');
 const sanitize = require('mongo-sanitize');
 app.use('/projects', projectsRoute.router);
 
+var profile = require('./app/src/profile.js');
+app.use('/profile', profile.router);
+
 /**
  * Main page.
  * 
@@ -64,6 +67,16 @@ app.get('/', (req, res) => {
  */
 app.get('/login', (req, res) => {
     ejs.renderFile('./app/views/login.ejs', {}, {}, (err, str) => {
+        res.send(str);
+    });
+});
+
+/**
+ * Routes user to their profile page if authenticated. Otherwise redirects to
+ * login page.
+ */
+app.get('/profile', auth.middleware.credentials, (req, res) => {
+    ejs.renderFile('./app/views/profile.ejs', {}, {}, (err, str) => {
         res.send(str);
     });
 });
