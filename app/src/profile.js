@@ -71,6 +71,12 @@ router.post('/changename', auth.middleware.credentials, (req, res) => {
 
 /**
  * Change password from profile page and update user cookie.
+ * 
+ * Behaviors:
+ *  1) Old password, when hashed, does not match hashed password cookie. Failure.
+ *  2) Old password (valid at this point) is the same as new password. Failure.
+ *  3) All requirements met, hash new password and update in DB, clear cookies and
+ *     make user login again.
  */
 router.post('/changepassword', auth.middleware.credentials, async (req, res) => {
     const oldPassword = req.body.oldPassword;

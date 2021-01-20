@@ -2,10 +2,10 @@ $(() => {
     $('[data-toggle="tooltip"]').tooltip()
 });
 
-// alphanumeric with _, 3 to 16 characters long
+// display name requirements: alphanumeric with _, 3 to 16 characters long
 const validDisplayName = /^[a-zA-Z0-9_]{2,15}$/;
 
-// placeholder password requirements
+// password requirements: placeholder
 const validPassword = /^.*/;
 const validPasswordRequirements = "TODO";
 
@@ -37,6 +37,13 @@ function changeDisplayName(oldDisplayName, newDisplayName) {
     }
 }
 
+/**
+ * Simple validation check for the input new password. Must pass regex check and
+ * the new password must match the confirmation.
+ * 
+ * @param {String} newPassword 
+ * @param {String} confirmNewPassword 
+ */
 function isValidPassword(newPassword, confirmNewPassword) {
     if (newPassword && confirmNewPassword && newPassword == confirmNewPassword) {
         if (validPassword.test(newPassword)) {
@@ -48,29 +55,3 @@ function isValidPassword(newPassword, confirmNewPassword) {
     }
     return false;
 }
-
-// /**
-//  * After input validation sends post request to backend to further process request.
-//  * No request is made if confirmation does not match or if 
-//  * 
-//  * @param {String} oldPassword 
-//  * @param {String} newPassword 
-//  * @param {String} confirmNewPassword 
-//  */
-// function changePassword(oldPassword, newPassword, confirmNewPassword) {
-//     if (oldPassword && newPassword && confirmNewPassword && newPassword == confirmNewPassword) {
-//         // validate password requirements
-//         if (!validPassword.test(newPassword)) {
-//             alert("Your password is not strong enough!");
-//         } else {
-//             // send request
-//             $.post('/profile/changepassword', { oldPassword: oldPassword, newPassword: newPassword }, (response) => {
-//                 if (response == 'M') {
-//                     location.reload();
-//                 } else {
-//                     console.log("Could not update password.");
-//                 }
-//             });
-//         }
-//     }
-// }
