@@ -4,8 +4,8 @@ const uuid = require("uuid");
 const { AceCursorManager } = require("./AceCursorManager");
 const sharedb = require("sharedb/lib/client");
 const json1 = require('ot-json1');
-const { CompileLaTeX } = require("./CompileLaTeX");
-import ReconnectingWebSocket from 'reconnecting-websocket';
+const ViewerManager = require("./ViewerManager");
+const ReconnectingWebSocket = require("reconnecting-websocket").default;
 
 sharedb.types.register(json1.type);
 var socket = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080/api/' + pid, [], {});
@@ -36,7 +36,7 @@ doc.subscribe(function (err) {
     aceEditorLeft.moveCursorTo(0, 0);
 
     var manager = new AceCursorManager(aceEditorLeft.getSession());
-    var sock2 = new WebSocket('ws://' + window.location.hostname + ':3080/api/extras/' + pid);
+    var sock2 = new ReconnectingWebSocket('ws://' + window.location.hostname + ':3080/api/extras/' + pid);
 
     let colors = ["#f44336", "#e91e63", "#9c27b0", "#3f51b5", "#673ab7", "#009688", "#ff5722", "#4caf50", "#9a0036"];
 
@@ -73,7 +73,7 @@ doc.subscribe(function (err) {
             }
             last_user_ping[data.username].last = Date.now();
             if (!$(`#usericon${usermd5}`).length) {
-                $('#user-presence').append(`<img id='usericon${usermd5}' title='${data.username}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded img-thumbnail" style="margin-left:2px;" width="28" height="28">`);
+                $('#user-presence').append(`<img id='usericon${usermd5}' title='${data.username}' src="https://www.gravatar.com/avatar/${usermd5}?d=identicon" class="rounded-lg border-light" style="margin-left:2px;" width="26" height="26">`);
             }
         }
         data.actions.forEach(element => {
@@ -88,13 +88,15 @@ doc.subscribe(function (err) {
                     let user_color = colors[Math.floor(Math.random() * colors.length)];
                     manager.addCursor(data.username, data.username, user_color, position);
                 }
+            } else if (element.action == 'viewUpdate') {
+                ViewerManager.setViewer(element.data);
             }
         });
     };
 
     let last_pos = null;
     function sendPing(isPing = false, override = false) {
-        if (sock2.readyState === WebSocket.OPEN) {
+        if (sock2.readyState === 1) {
             const selectionRange = aceEditorLeft.getSelectionRange();
             var data = {
                 isPing: isPing,
@@ -128,7 +130,7 @@ doc.subscribe(function (err) {
     }
     ping();
 
-    CompileLaTeX(true);
+    ViewerManager.compileLaTeX(true);
     aceEditorLeft.on('change', (delta) => {
         if (!suppressed) {
             const aceDoc = aceEditorLeft.getSession().getDocument();

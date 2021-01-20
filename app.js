@@ -8,11 +8,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 const ews = require('express-ws')(app);
-const WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 
 const config = require('./config');
 const auth = require('./app/src/auth');
 const db = require('./app/src/db');
+const sockets = require('./app/src/sockets');
+sockets.createWebSockets(app);
 
 db.connect(() => {
     /**
@@ -22,7 +23,6 @@ db.connect(() => {
     welcome.check(() => {
         app.use('/welcome', welcome.router);
     });
-
 });
 
 /** 
@@ -121,35 +121,4 @@ app.get('/admin', auth.middleware.credentials, auth.middleware.admin, (req, res)
  */
 app.listen(config.server.port, () => {
     console.log(`Server listening on the port::${config.server.port}`);
-});
-
-app.ws('/api/:id', (ws, req) => {
-    auth.credentials(req.cookies.u, req.cookies.h, () => {
-        auth.project.modify(req.params.id, req.cookies.u, () => {
-            let metadata = {
-                userid: req.cookies.u
-            }
-            let stream = new WebSocketJSONStream(ws);
-            projectsRoute.backendListen(stream, metadata);
-        }, () => { })
-    }, () => { });
-});
-
-app.ws('/api/extras/:id', (ws, req) => {
-    auth.credentials(req.cookies.u, req.cookies.h, () => {
-        auth.project.modify(req.params.id, req.cookies.u, () => {
-            ws.project = req.params.id
-            ws.on('message', (msg) => {
-                ews.getWss().clients.forEach((client) => {
-                    if (client !== ws && client.project == req.params.id) {
-                        if (client.readyState === ws.OPEN) {
-                            let data = JSON.parse(msg);
-                            data.username = req.cookies.u;
-                            client.send(JSON.stringify(data));
-                        }
-                    }
-                });
-            });
-        }, () => { })
-    }, () => { });
 });

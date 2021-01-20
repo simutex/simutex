@@ -4,6 +4,8 @@ const ejs = require('ejs');
 const bodyParser = require('body-parser');
 const cookierParser = require('cookie-parser');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const cmdRouter = express.Router({ mergeParams: true });
 cmdRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -11,6 +13,7 @@ cmdRouter.use(bodyParser.json());
 cmdRouter.use(cookierParser());
 
 const db = require('./db');
+const config = require('../../config');
 
 /**
  * Provide the root configuration page if the root account does not exist.
@@ -19,12 +22,17 @@ const db = require('./db');
  */
 router.get('/', (req, res) => {
     check(() => {
-        ejs.renderFile('app/views/welcome.ejs', {}, {}, (err, str) => {
-            if (err) throw err;
-            res.send(str);
+        let latexmk = path.resolve(config.latexmk.path, 'latexmk.pl');
+        fs.access(latexmk, fs.F_OK, (err) => {
+            let ejs_vars = { latexmk: true, path: latexmk };
+            if (err) ejs_vars.latexmk = false;
+            ejs.renderFile('app/views/welcome.ejs', ejs_vars, {}, (err, str) => {
+                if (err) throw err;
+                res.send(str);
+            });
         });
     }, () => {
-        res.redirect('/');
+        res.renderFile('/')
     });
 });
 
@@ -52,7 +60,7 @@ router.post('/', (req, res) => {
  *
  * Executes pass() if true, else fail()
  */
-function check(pass, fail = () => {}) {
+function check(pass, fail = () => { }) {
     db.get().collection('accounts').find({ username: 'root' }).toArray((err, accounts) => {
         if (accounts.length == 0) {
             pass();

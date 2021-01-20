@@ -65,7 +65,7 @@
                                 <a class="dropdown-item" href="/projects">My Projects</a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="./settings/share">Share</a>
-                                <span class="dropdown-item" style="cursor: pointer;" onclick="editor.CompileLaTeX(true);">Compile</span>
+                                <span class="dropdown-item" style="cursor: pointer;" onclick="editor.compileLaTeX(true);">Compile</span>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="./settings">Settings</a>
                             </div>
@@ -80,7 +80,7 @@
                 </div>
                 
                 <div id="pdf-viewer-parent" class="ui-layout-east border-width-left no-padding">
-                    <object id="pdf-viewer" type="application/pdf" data=""></object>
+                    <iframe id="pdf-viewer" width="100%" height="100%" frameBorder="0" src=""></iframe>
                 </div><!-- -->
             </div>
         </div>
