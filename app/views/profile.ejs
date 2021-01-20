@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    
+
     <title>Profile</title> 
 
     <!-- Bootstrap core CSS -->
@@ -21,40 +21,43 @@
     </div>
 
     <!-- Display username and show change name input -->
-    <div class="rounded shadow p-3 mb-5 bg-white">
+    <div class="rounded shadow p-3 mb-5 bg-white w-100">
         <h5>Display Name</h5><br>
         <table style="width:35%">
             <tr>
                 <th>Username:</th>
-                <td class="font-italic text-dark" style="margin-right:2.5em;"><%= user %></td>
+                <td class="font-italic text-dark" style="margin-right:2.5em;">
+                    <%= user %>
+                </td>
             </tr>
             <tr>
                 <th>Display Name:</th>
-                <td class="font-italic text-dark" style="margin-right:2.5em;"><%= displayName %></td>
+                <td class="font-italic text-dark" style="margin-right:2.5em;">
+                    <%= displayName %>
+                </td>
             </tr>
-            <!-- Form to submit name change -->
-            <form class="form-inline" onsubmit="changeDisplayName('<%= displayName %>', document.getElementById('candidateDisplayName').value);">
-                <tr>
-                    <th>New Display Name:</th>
-                    <th>
-                        <input id="candidateDisplayName" name="displayName" style="margin-right:2.5em;">
-                    </th>
-                </tr>
-                <tr>
-                    <th>
-                        <br>
-                        <button class="btn btn-primary" type="submit">Change Display Name</button>
-                    </th>
-                </tr>
-            </form>
-        </table>   
+            <tr>
+                <th>New Display Name:</th>
+                <th>
+                    <input id="candidateDisplayName" name="displayName" style="margin-right:2.5em;">
+                </th>
+            </tr>
+            <tr>
+                <th>
+                    <br>
+                    <button class="btn btn-primary" onclick="changeDisplayName('<%= displayName %>', document.getElementById('candidateDisplayName').value);">
+                        Change Display Name
+                    </button>
+                </th>
+            </tr>
+        </table>
     </div>
 
     <!-- Change password -->
     <div class="rounded shadow p-3 mb-5 bg-white">
         <h5>Password</h5><br>
-        <form class="form-inline" method="post" action="/profile/changepassword" onsubmit="return isValidPassword(document.getElementById('newPassword1').value,
-                                                                                                                  document.getElementById('newPassword2').value);">
+        <form class="form-inline" method="post" action="/profile/changepassword"
+            onsubmit="return isValidPassword(document.getElementById('newPassword1').value, document.getElementById('newPassword2').value);">
             <table style="width:35%">
                 <tr>
                     <th>Old Password:</th>
@@ -100,4 +103,5 @@
     <!-- Profile core JavaScript -->
     <script type="text/javascript" src="/dist/js/edit-profile.js"></script>
 </body>
+
 </html>
