@@ -22,24 +22,28 @@
 
     <!-- Display username and show change name input -->
     <div class="rounded shadow p-3 mb-5 bg-white">
-        <h5>Change Username</h5><br>
+        <h5>Display Name</h5><br>
         <table style="width:35%">
             <tr>
                 <th>Username:</th>
                 <td class="font-italic text-dark" style="margin-right:2.5em;"><%= user %></td>
             </tr>
+            <tr>
+                <th>Display Name:</th>
+                <td class="font-italic text-dark" style="margin-right:2.5em;"><%= displayName %></td>
+            </tr>
             <!-- Form to submit name change -->
-            <form class="form-inline" onsubmit="changeUsername('<%= user %>', document.getElementById('candidateUsername').value);">
+            <form class="form-inline" onsubmit="changeDisplayName('<%= displayName %>', document.getElementById('candidateDisplayName').value);">
                 <tr>
-                    <th>New Username:</th>
+                    <th>New Display Name:</th>
                     <th>
-                        <input id="candidateUsername" name="username" style="margin-right:2.5em;">
+                        <input id="candidateDisplayName" name="displayName" style="margin-right:2.5em;">
                     </th>
                 </tr>
                 <tr>
                     <th>
                         <br>
-                        <button class="btn btn-primary" type="submit">Change Username</button>
+                        <button class="btn btn-primary" type="submit">Change Display Name</button>
                     </th>
                 </tr>
             </form>
@@ -48,8 +52,9 @@
 
     <!-- Change password -->
     <div class="rounded shadow p-3 mb-5 bg-white">
-        <h5>Change Password</h5><br>
-        <form class="form-inline" method="post" onsubmit="">
+        <h5>Password</h5><br>
+        <form class="form-inline" method="post" action="/profile/changepassword" onsubmit="return isValidPassword(document.getElementById('newPassword1').value,
+                                                                                                                  document.getElementById('newPassword2').value);">
             <table style="width:35%">
                 <tr>
                     <th>Old Password:</th>
@@ -77,6 +82,13 @@
                 </tr>
             </table>
         </form>
+        <!-- Displays error message present in EJS variables if any provided -->
+        <% if (error) { %>
+        <br>
+        <div class="alert alert-danger" role="alert">
+            Error: <%= error %>
+        </div>
+        <% } %>
     </div>
 
     <!-- jQuery Libraries -->
