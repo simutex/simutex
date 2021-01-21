@@ -56,37 +56,51 @@ router.use(auth.middleware.credentials);
  */
 router.get('/', async (req, res) => {
 
-    // Create array of last modified timeStamps for each project
-
-    let timeStamps = [];
-    let timeMap = {};
-    findMTime = db.get().collection('project_data').find({});
-    await findMTime.forEach(
-        doc => {
-            timeStamps.push(doc._m.mtime);
-            let forConversion = new Date(doc._m.mtime).toString();
-            let splitter = forConversion.split("T");
-            // console.log("Last edited on: " + splitter[0]);
-            timeMap[doc._id] = splitter[0];
-        }
-    );
-    // console.log(timeStamps)
-
-    // Create a map for {project UID : last modification timeStamp} , filtering on previously
-    // created array
-    let editMap = {};
-    lastEdits = db.get().collection('o_project_data').find({ "m.ts": { $in: timeStamps } });
-    await lastEdits.forEach(
-        doc => {
-            // console.log(doc);
-            editMap[doc.d] = doc.m.userid;
-        }
-    );
-    // await console.log(editMap);
-    // console.log("AWAITED PROPERLY")
     db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] })
         .project({ title: true, id: true , owner: true, collaborators: true, viewers: true})
-        .toArray((err, projects) => {
+        .toArray( async (err, projects) => {
+
+        // Create array of user's specifc project Id's
+
+        let projectIds = [];
+        for (element of projects) {
+            projectIds.push(element.id);
+        }
+
+        // Create array of last modified timeStamps for each of user's projects
+
+        let timeStamps = [];
+        let timeMap = {};
+        findMTime = db.get().collection('project_data').find({ "_id": { $in: projectIds } });
+        await findMTime.forEach(
+            doc => {
+                timeStamps.push(doc._m.mtime);
+                let forConversion = new Date(doc._m.mtime).toString();
+                let splitter = forConversion.split("T");
+                // console.log("Last edited on: " + splitter[0]);
+                timeMap[doc._id] = splitter[0];
+            }
+        );
+        console.log("time Map");
+        console.log(timeMap)
+
+        // This uses time stamps of last modification for each project Id
+        // to help determine which user last modified the project.
+
+        // Create a map for {project UID : last modification timeStamp} , filtering on previously
+        // created array
+        let editMap = {};
+        lastEdits = db.get().collection('o_project_data').find({ $and: [ { "m.ts": { $in: timeStamps } }, {"d": { $in: projectIds } } ] });
+        await lastEdits.forEach(
+            doc => {
+                // console.log(doc);
+                // A value of null will indicate that the document was created, and has no modifications
+                editMap[doc.d] = doc.m.userid;
+            }
+        );
+        console.log("edit map");
+        console.log(editMap);
+
         // console.log("SHOULD BE AFTER AWAIT");
         // console.log(timeMap)
         ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
