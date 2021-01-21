@@ -14,26 +14,143 @@
 
 <body class="text-center">
 
-    <div class="container">
-        <div class="row m-3">
-            <div class="col">
+    <div class="d-flex">
+
+        <div class="col">
+
+        <!-- Search Bar -->
+        <nav class="navbar navbar-light bg-light">
+
+            <div class="col-sm-4">
+                <form class="form-inline">
+                    <input class="form-control" onkeyup="searchFunction()" type="search" placeholder="Search the table..." aria-label="Search" id="tableSearch">
+                    <button class="btn btn-outline-primary" type="submit">Search</button>
+                </form>
+            </div>
+
+            <div class="col-sm-4">
                 <a href="/projects/new" class="btn btn-primary">Create new project</a>
             </div>
-        </div>
-        <% if (projects_data) {
-            for (let i = 0; i < projects_data.length; i++) { %>
-        <div class="row m-3">
-            <div class="col text-center">
-                <a href="<%= `/projects/${projects_data[i]['id']}` %>"><%= projects_data[i]['title'] %></a>
+
+            <div class="col-sm-4">
+                <a class="btn btn-outline-danger" type="submit" href="/logout" style="float: right;">Logout</a>
             </div>
+
+        </nav>
+
+        <table class="table table-dark table-hover" id="projectTable">
+            <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Title</th>
+            <th scope="col">Project Owner</th>
+            <th scope="col">Collaborators</th>
+            <th scope="col">Viewers</th>
+            <th scope="col">Last edited</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+            <% if (projects_data) {
+                for (let i = 0; i < projects_data.length; i++) { %>
+            <tr>
+                <th scope="row"><%= i %></th>
+                <td><a href="<%= `/projects/${projects_data[i]['id']}` %>"><%= projects_data[i]['title'] %></a></td>
+                <td><%= projects_data[i]['owner'] %></td>
+                <td><%= projects_data[i]['collaborators'] %></td>
+                <td><%= projects_data[i]['viewers'] %></td>
+
+                <!-- Handle case where userId is null, this is reflected in O-transform DB -->
+                <!-- It is already obvious who created the project from the owner field...  -->
+
+                <% if (edit_map[projects_data[i]['id']] == null) { %>
+                    <td><%= projects_data[i]['owner'] %> created at <%= time_map[projects_data[i].id] %></td>
+                <% } else { %>
+                    <td><%= edit_map[projects_data[i]['id']] %> edited at <%= time_map[projects_data[i].id] %></td>
+                <% } %>
+
+            </tr>
+                <% }
+            } %>
+
+        </tbody>
+
+        </table>
+
+        <script>
+            function searchFunction() {
+
+              // Declare variables
+              var input, filter, table, tr, td, i, txtValue;
+              input = document.getElementById("tableSearch");
+              filter = input.value.toUpperCase();
+              table = document.getElementById("projectTable");
+              tr = table.getElementsByTagName("tr");
+
+              // Loop through all table rows, and hide those who don't match the search query
+              for (i = 0; i < tr.length; i++) {
+                // Skip column names...basically all the column headers...
+                if (i == 0) {
+                    continue;
+                }
+
+                // Content for each row in table...
+                let textContentArray = [];
+
+                th = tr[i].getElementsByTagName("th");
+                for (element of th) {
+                    if (element) {
+                        textContentArray.push(element.textContent || element.innerText);
+                        // console.log(element);
+                    }
+                }
+
+                td = tr[i].getElementsByTagName("td")
+                for (element of td) {
+                    if (element) {
+                        textContentArray.push(element.textContent || element.innerText);
+                        // console.log(element);
+                    }
+                }
+                // console.log("----------");
+
+                let found = false;
+                // console.log(textContentArray)
+                for (j = 0; j < textContentArray.length; j++) {
+                    // For now lets skip the columns where Date information is included
+                    // Don't care about the numbers in the date, editors are already accounted for
+                    if (j == 5) {
+                        continue;
+                    }
+
+                    let textContent = textContentArray[j];
+                    if (textContent) {
+                        if (textContent.toUpperCase().indexOf(filter) > -1) {
+                            found = true;
+                        }
+                    }
+                }
+
+                if (found) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+              }
+            }
+        </script>
+
         </div>
-            <% }
-        } %>
+
+
+
+
     </div>
 
     <!-- jQuery Libraries -->
     <script type="text/javascript" src="/dist/js/jquery-latest.js"></script>
-    
+
     <!-- Bootstrap core JavaScript -->
     <script type="text/javascript" src="/dist/js/bootstrap.bundle.min.js"></script>
 

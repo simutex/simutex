@@ -26,9 +26,48 @@ router.use(auth.middleware.credentials);
 /**
  * Show a list of all the users projects.
  */
-router.get('/', (req, res) => {
-    db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] }).project({ title: true, id: true }).toArray((err, projects) => {
-        ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects }, {}, (err, str) => {
+router.get('/', async (req, res) => {
+
+    db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] })
+        .project({ title: true, id: true , owner: true, collaborators: true, viewers: true})
+        .toArray( async (err, projects) => {
+
+        // Create array of user's specifc project Id's
+
+        let projectIds = [];
+        for (element of projects) {
+            projectIds.push(element.id);
+        }
+
+        // Create array of last modified timeStamps for each of user's projects
+
+        let timeStamps = [];
+        let timeMap = {};
+        findMTime = db.get().collection('project_data').find({ "_id": { $in: projectIds } });
+        await findMTime.forEach(
+            doc => {
+                timeStamps.push(doc._m.mtime);
+                let forConversion = new Date(doc._m.mtime).toString();
+                let splitter = forConversion.split("T");
+                timeMap[doc._id] = splitter[0];
+            }
+        );
+
+        // This uses time stamps of last modification for each project Id
+        // to help determine which user last modified the project.
+
+        // Create a map for {project UID : last modification timeStamp} , filtering on previously
+        // created array
+        let editMap = {};
+        lastEdits = db.get().collection('o_project_data').find({ $and: [ { "m.ts": { $in: timeStamps } }, {"d": { $in: projectIds } } ] });
+        await lastEdits.forEach(
+            doc => {
+                // A value of null will indicate that the document was created, and has no modifications
+                editMap[doc.d] = doc.m.userid;
+            }
+        );
+
+        ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
             res.send(str);
         });
     });
@@ -87,7 +126,7 @@ cmdRouter.get('/', (req, res) => {
 
 /**
  * Provide the document editor for the requested project.
- * 
+ *
  * If the user does not have modify permissions, then they will be routed to view the document.
  * If the user does not have access permissions, then they will be routed to their projects.
  */
@@ -152,7 +191,7 @@ cmdRouter.get('/pdf', auth.middleware.project.access, (req, res) => {
 
 /**
  * Provide the raw text of the specified document.
- * 
+ *
  * Returned page body does not contain any text/data other than the document.
  * Formatting may not appear as shown in the editor.
  */
@@ -163,8 +202,8 @@ cmdRouter.get('/raw', auth.middleware.project.access, (req, res) => {
 
 /**
  * Return a raw text view of the document.
- * 
- * Formatting should be identical, with the exception of tab length, to the editor. 
+ *
+ * Formatting should be identical, with the exception of tab length, to the editor.
  */
 cmdRouter.get('/text', auth.middleware.project.access, (req, res) => {
     res.set('Content-Type', 'text/html');
@@ -173,7 +212,7 @@ cmdRouter.get('/text', auth.middleware.project.access, (req, res) => {
 
 /**
  * Downloads the output PDF document, if it exists.
- * 
+ *
  * Sends a basic messages if the output PDF does not exist.
  */
 cmdRouter.get('/download', auth.middleware.project.access, (req, res) => {
@@ -187,13 +226,13 @@ cmdRouter.get('/download', auth.middleware.project.access, (req, res) => {
 
 /**
  * Deletes a project.
- * 
+ *
  * Requires owner permissions.
  */
 cmdRouter.get('/delete', auth.middleware.project.owner, (req, res) => {
     switch (config.database.project.delete) {
         case 'all':
-            // Delete all data from `projects`, `project_data`, and `o_project_data` and on-disk    
+            // Delete all data from `projects`, `project_data`, and `o_project_data` and on-disk
             db.get().collection('projects').deleteOne({ id: req.params.id }, (err, result_one_a) => {
                 db.get().collection('project_data').deleteOne({ _id: req.params.id }, (err, result_one_b) => {
                     db.get().collection('o_project_data').deleteMany({ d: req.params.id }, (err, result_many) => {
