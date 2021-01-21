@@ -77,12 +77,9 @@ router.get('/', async (req, res) => {
                 timeStamps.push(doc._m.mtime);
                 let forConversion = new Date(doc._m.mtime).toString();
                 let splitter = forConversion.split("T");
-                // console.log("Last edited on: " + splitter[0]);
                 timeMap[doc._id] = splitter[0];
             }
         );
-        console.log("time Map");
-        console.log(timeMap)
 
         // This uses time stamps of last modification for each project Id
         // to help determine which user last modified the project.
@@ -93,16 +90,11 @@ router.get('/', async (req, res) => {
         lastEdits = db.get().collection('o_project_data').find({ $and: [ { "m.ts": { $in: timeStamps } }, {"d": { $in: projectIds } } ] });
         await lastEdits.forEach(
             doc => {
-                // console.log(doc);
                 // A value of null will indicate that the document was created, and has no modifications
                 editMap[doc.d] = doc.m.userid;
             }
         );
-        console.log("edit map");
-        console.log(editMap);
 
-        // console.log("SHOULD BE AFTER AWAIT");
-        // console.log(timeMap)
         ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
             res.send(str);
         });
