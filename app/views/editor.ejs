@@ -10,6 +10,10 @@
 
     <title><%= unescape(ptitle) %> | <%= unescape(brand.name) %></title>
 
+    <!-- jQuery Libraries -->
+
+    <script type="text/javascript" src="/dist/js/jquery-latest.js"></script>
+
     <!-- Bootstrap core CSS -->
     <link type="text/css" rel="stylesheet" href="/dist/css/bootstrap.min.css">
 
@@ -18,7 +22,7 @@
 
     <!-- Custom styles for this template -->
     <link type="text/css" rel="stylesheet" href="/dist/css/editor-styles.css" >
-    
+
 </head>
 
 <body>
@@ -42,49 +46,52 @@
         <!-- Page Content -->
         <div id="page-content-wrapper">
 
-            <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
                 <!-- <button class="btn btn-primary" id="menu-toggle">Toggle Menu</button> -->
 
-                <button class="navbar-toggler float-right" type="button" data-toggle="collapse"
-                    data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-                    aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <div class="row" id="navbarSupportedContent">
+                <div class="col">
                     <span id="project_title" class="user-select-none" role="button"><%= unescape(ptitle) %></span>
-                    <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
-                        <li class="navbar-brand" id="user-presence">
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle active" href="#" id="navbarDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                More
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="/projects">My Projects</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="./settings/share">Share</a>
-                                <span class="dropdown-item" style="cursor: pointer;" onclick="editor.compileLaTeX(true);">Compile</span>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="./settings">Settings</a>
-                            </div>
-                        </li>
-                    </ul>
                 </div>
-            </nav>
+                <div class="col">
+                    <button type="button" class="btn btn-info ml-auto" data-toggle="modal" data-target="#myModal">Project Settings</button>
+                </div>
+                <div class="col">
+                    <div class="ml-auto" id="user-presence"></div>
+                </div>
+                <div class="col">
+                    <a href="/projects" class="btn btn-info ml-auto" role="button">My Projects</a>
+                </div>
+            </div>
 
             <div id="editor-container" class="container-fluid" style="padding:0px; margin:0px; height:calc(100% - 57px);">
                 <div class="ui-layout-center border-width-right no-padding" style="width: 500px;height:500px;" id="editor-parent">
                     <div id="editor-left"></div>
                 </div>
-                
+
                 <div id="pdf-viewer-parent" class="ui-layout-east border-width-left no-padding">
                     <iframe id="pdf-viewer" width="100%" height="100%" frameBorder="0" src=""></iframe>
                 </div><!-- -->
             </div>
         </div>
         <!-- /#page-content-wrapper -->
+
+            <!-- Modal -->
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <!-- <h4 class="modal-title">Project Settings</h4> -->
+            </div>
+            <div class="modal-body">
+            <%- include("./modal_project_settings.ejs") %>
+            </div>
+            <div class="modal-footer">
+            <!-- <button type="button" class="btn btn-default" data-dismiss="modal">Close</button> -->
+            </div>
+        </div>
+        </div>
+    </div>
 
     </div>
     <!-- /#wrapper -->

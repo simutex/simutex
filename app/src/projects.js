@@ -153,10 +153,22 @@ cmdRouter.get('/edit', (req, res) => {
                     brand: config.brand,
                     pid: escape(req.params.id),
                     ptitle: escape(project.title),
-                    pdata: escape(pdata),
+                    // pdata: escape(pdata),
+                    // pisowner: (project.owner == req.cookies.u),
+                    // piscollab: project.collaborators.includes(req.cookies.u),
+                    pisviewer: project.viewers.includes(req.cookies.u),
+                    // brand: config.brand,
+                    puser: req.cookies.u,
+                    // pid: escape(req.params.id),
+                    // ptitle: escape(project.title),
+                    pdata: escape(((data === undefined) ? "" : data).toString()),
+                    powner: project.owner,
+                    pcollaborators: project.collaborators,
+                    pviewers: project.viewers,
                     pisowner: (project.owner == req.cookies.u),
                     piscollab: project.collaborators.includes(req.cookies.u),
-                    pisviewer: project.viewers.includes(req.cookies.u)
+                    paction: null,
+                    uuid: require('uuid')
                 }
 
                 var connection = sockets.getConnection();
