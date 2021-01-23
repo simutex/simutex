@@ -16,7 +16,6 @@ SimuTex is an in-work collaborative LaTeX editing application available in the b
 # Planned Features
 - Image support, currently there is none!
 - File upload
-- BibTex
 
 # Key Information
 - Uses `latexmk` to correctly compile projects
