@@ -6,6 +6,7 @@ const mkdirp = require('mkdirp');
 const bodyParser = require('body-parser');
 const cookierParser = require('cookie-parser');
 const spawn = require('child_process').spawn;
+const path = require('path');
 const uuid = require('uuid');
 
 const cmdRouter = express.Router({ mergeParams: true });
@@ -29,48 +30,48 @@ router.use(auth.middleware.credentials);
 router.get('/', async (req, res) => {
 
     db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] })
-        .project({ title: true, id: true , owner: true, collaborators: true, viewers: true})
-        .toArray( async (err, projects) => {
+        .project({ title: true, id: true, owner: true, collaborators: true, viewers: true })
+        .toArray(async (err, projects) => {
 
-        // Create array of user's specifc project Id's
+            // Create array of user's specifc project Id's
 
-        let projectIds = [];
-        for (element of projects) {
-            projectIds.push(element.id);
-        }
-
-        // Create array of last modified timeStamps for each of user's projects
-
-        let timeStamps = [];
-        let timeMap = {};
-        findMTime = db.get().collection('project_data').find({ "_id": { $in: projectIds } });
-        await findMTime.forEach(
-            doc => {
-                timeStamps.push(doc._m.mtime);
-                let forConversion = new Date(doc._m.mtime).toString();
-                let splitter = forConversion.split("T");
-                timeMap[doc._id] = splitter[0];
+            let projectIds = [];
+            for (element of projects) {
+                projectIds.push(element.id);
             }
-        );
 
-        // This uses time stamps of last modification for each project Id
-        // to help determine which user last modified the project.
+            // Create array of last modified timeStamps for each of user's projects
 
-        // Create a map for {project UID : last modification timeStamp} , filtering on previously
-        // created array
-        let editMap = {};
-        lastEdits = db.get().collection('o_project_data').find({ $and: [ { "m.ts": { $in: timeStamps } }, {"d": { $in: projectIds } } ] });
-        await lastEdits.forEach(
-            doc => {
-                // A value of null will indicate that the document was created, and has no modifications
-                editMap[doc.d] = doc.m.userid;
-            }
-        );
+            let timeStamps = [];
+            let timeMap = {};
+            findMTime = db.get().collection('project_data').find({ "_id": { $in: projectIds } });
+            await findMTime.forEach(
+                doc => {
+                    timeStamps.push(doc._m.mtime);
+                    let forConversion = new Date(doc._m.mtime).toString();
+                    let splitter = forConversion.split("T");
+                    timeMap[doc._id] = splitter[0];
+                }
+            );
 
-        ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
-            res.send(str);
+            // This uses time stamps of last modification for each project Id
+            // to help determine which user last modified the project.
+
+            // Create a map for {project UID : last modification timeStamp} , filtering on previously
+            // created array
+            let editMap = {};
+            lastEdits = db.get().collection('o_project_data').find({ $and: [{ "m.ts": { $in: timeStamps } }, { "d": { $in: projectIds } }] });
+            await lastEdits.forEach(
+                doc => {
+                    // A value of null will indicate that the document was created, and has no modifications
+                    editMap[doc.d] = doc.m.userid;
+                }
+            );
+
+            ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
+                res.send(str);
+            });
         });
-    });
 });
 
 /**
@@ -177,7 +178,7 @@ cmdRouter.get('/edit', (req, res) => {
  * Send the PDF document to the browser for rendering.
  */
 cmdRouter.get('/view', auth.middleware.project.access, (req, res) => {
-    res.sendFile(req.params.id + '/out.pdf', { root: 'projects' }, (err) => {
+    res.sendFile(req.params.id + '/in.pdf', { root: 'projects' }, (err) => {
         if (err) throw err;
     });
 });
@@ -370,59 +371,60 @@ cmdRouter.post('/settings/adduser', auth.middleware.project.modify, (req, res) =
  * API to handle saving and building the document.
  * Checks user has modification permissions.
  * Will save the posted data to disk, overwriting the current file.
- * Returns base64 encoded PDF data.
- * Builds the document and returns it if specified in the post data. (build = true)
+ * Builds the document using a Docker container and returns it if specified in the post data. (build = true)
  */
 cmdRouter.post('/build', auth.middleware.project.modify, (req, res) => {
+    function runLBS(project, res) {
+        let dir = path.resolve('./projects', project);
+        let lbs = spawn('docker', ['run', '--rm', '-i', '--net=none', '-v', `${dir}:/data`, '--name', `lbs-${project}-${uuid.v4()}`, 'latex-full', 'latexmk', '-cd', '-f', '-interaction=batchmode', '-pdf', 'in.tex']);
+        lbs.stdout.on("data", data => {
+            console.log("stdout: " + data);
+        });
+
+        lbs.stderr.on("data", data => {
+            console.log("stderr: " + data);
+        });
+
+        lbs.on("error", (error) => {
+            console.log("err: " + error.message);
+        });
+
+        lbs.on("close", code => {
+            console.log("code: " + code);
+            if (code == 0) {
+                let output_url = `http://${config.server.hostname}:${config.server.port}/projects/${req.params.id}/view`;
+                let broadcast_data = {
+                    actions: [
+                        {
+                            action: 'viewUpdate',
+                            data: output_url
+                        }
+                    ]
+                }
+                sockets.broadcastToProject(req.params.id, req.cookies.u, broadcast_data);
+                res.send('B0');
+            } else {
+                res.send("E2");
+            }
+        });
+
+        // Timeout for compilations taking too long
+        setTimeout(() => {
+            try {
+                lbs.kill();
+            } catch (e) {
+                console.log("COULD NOT KILL PROCESS.");
+                res.send("E1");
+            }
+        }, 10 * 1000); // 10 second timeout
+    }
+
     let build_dir = 'projects/' + req.params.id;
     mkdirp(build_dir).then(made => {
         let in_file = build_dir + '/in.tex'
         fs.writeFile(in_file, req.body.data, 'utf8', (e) => {
             if (req.body.build == 'true') {
-                let latexmk = spawn("perl", ["-S", `${config.latexmk.path}/latexmk.pl`, "-jobname=" + build_dir + "/out", "-pdf", in_file]);
-                latexmk.stdout.on("data", data => {
-                    //console.log("stdout: " + data);
-                });
-
-                latexmk.stderr.on("data", data => {
-                    //console.log("stderr: " + data);
-                });
-
-                latexmk.on("error", (error) => {
-                    //console.log("err: " + error.message);
-                });
-
-                latexmk.on("close", code => {
-                    console.log("code: " + code);
-                    if (code == 0) {
-                        let output_url = `http://${config.server.hostname}:${config.server.port}/projects/${req.params.id}/view`;
-                        let broadcast_data = {
-                            actions: [
-                                {
-                                    action: 'viewUpdate',
-                                    data: output_url
-                                }
-                            ]
-                        }
-                        sockets.broadcastToProject(req.params.id, req.cookies.u, broadcast_data);
-                        res.send('Build broadcast occurred.');
-                        /* res.send(`http://${config.server.hostname}:${config.server.port}/projects/${req.params.id}/view`); */
-                        /* res.send(fs.readFileSync(build_dir + '/out.pdf', { encoding: 'base64' })); */
-                        //ws.send(build_dir + "/out.pdf");
-                    } else {
-                        res.send("E2");
-                    }
-                });
-
-                // Timeout for compilations taking too long
-                setTimeout(() => {
-                    try {
-                        latexmk.kill();
-                    } catch (e) {
-                        console.log("COULD NOT KILL PROCESS.");
-                        res.send("E1");
-                    }
-                }, 10 * 1000); // 10 second timeout
+                runLBS(req.params.id, res);
             } else {
                 if (e == null) {
                     res.send("M0");
