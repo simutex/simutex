@@ -46,10 +46,20 @@ router.get('/', async (req, res) => {
         findMTime = db.get().collection('project_data').find({ "_id": { $in: projectIds } });
         await findMTime.forEach(
             doc => {
+                // doc._m.mtime = UTC epoch var in milliseconds
                 timeStamps.push(doc._m.mtime);
-                let forConversion = new Date(doc._m.mtime).toString();
-                let splitter = forConversion.split("T");
-                timeMap[doc._id] = splitter[0];
+                // console.log(doc._m.mtime);
+
+                var d = new Date(0);
+                d.setUTCMilliseconds(doc._m.mtime);
+                // console.log(d.toString());
+
+                let hrMinSec = d.toString().split(" GMT");
+                // console.log(hrMinSec);
+                let timeZone = hrMinSec[1].split(" (");
+                let tzString = timeZone[1].slice(0, timeZone[1].length-1)
+                // console.log(tzString)
+                timeMap[doc._id] = hrMinSec[0] + " (" + tzString + ")";
             }
         );
 
@@ -143,10 +153,22 @@ cmdRouter.get('/edit', (req, res) => {
                     brand: config.brand,
                     pid: escape(req.params.id),
                     ptitle: escape(project.title),
-                    pdata: escape(pdata),
+                    // pdata: escape(pdata),
+                    // pisowner: (project.owner == req.cookies.u),
+                    // piscollab: project.collaborators.includes(req.cookies.u),
+                    pisviewer: project.viewers.includes(req.cookies.u),
+                    // brand: config.brand,
+                    puser: req.cookies.u,
+                    // pid: escape(req.params.id),
+                    // ptitle: escape(project.title),
+                    pdata: escape(((data === undefined) ? "" : data).toString()),
+                    powner: project.owner,
+                    pcollaborators: project.collaborators,
+                    pviewers: project.viewers,
                     pisowner: (project.owner == req.cookies.u),
                     piscollab: project.collaborators.includes(req.cookies.u),
-                    pisviewer: project.viewers.includes(req.cookies.u)
+                    paction: null,
+                    uuid: require('uuid')
                 }
 
                 var connection = sockets.getConnection();
