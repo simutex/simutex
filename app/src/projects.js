@@ -46,10 +46,20 @@ router.get('/', async (req, res) => {
         findMTime = db.get().collection('project_data').find({ "_id": { $in: projectIds } });
         await findMTime.forEach(
             doc => {
+                // doc._m.mtime = UTC epoch var in milliseconds
                 timeStamps.push(doc._m.mtime);
-                let forConversion = new Date(doc._m.mtime).toString();
-                let splitter = forConversion.split("T");
-                timeMap[doc._id] = splitter[0];
+                // console.log(doc._m.mtime);
+
+                var d = new Date(0);
+                d.setUTCMilliseconds(doc._m.mtime);
+                // console.log(d.toString());
+
+                let hrMinSec = d.toString().split(" GMT");
+                // console.log(hrMinSec);
+                let timeZone = hrMinSec[1].split(" (");
+                let tzString = timeZone[1].slice(0, timeZone[1].length-1)
+                // console.log(tzString)
+                timeMap[doc._id] = hrMinSec[0] + " (" + tzString + ")";
             }
         );
 
