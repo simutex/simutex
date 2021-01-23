@@ -34,7 +34,6 @@ router.get('/', async (req, res) => {
         .toArray(async (err, projects) => {
 
             // Create array of user's specifc project Id's
-
             let projectIds = [];
             for (element of projects) {
                 projectIds.push(element.id);
@@ -47,10 +46,20 @@ router.get('/', async (req, res) => {
             findMTime = db.get().collection('project_data').find({ "_id": { $in: projectIds } });
             await findMTime.forEach(
                 doc => {
+                    // doc._m.mtime = UTC epoch var in milliseconds
                     timeStamps.push(doc._m.mtime);
-                    let forConversion = new Date(doc._m.mtime).toString();
-                    let splitter = forConversion.split("T");
-                    timeMap[doc._id] = splitter[0];
+                    // console.log(doc._m.mtime);
+
+                    var d = new Date(0);
+                    d.setUTCMilliseconds(doc._m.mtime);
+                    // console.log(d.toString());
+
+                    let hrMinSec = d.toString().split(" GMT");
+                    // console.log(hrMinSec);
+                    let timeZone = hrMinSec[1].split(" (");
+                    let tzString = timeZone[1].slice(0, timeZone[1].length - 1)
+                    // console.log(tzString)
+                    timeMap[doc._id] = hrMinSec[0] + " (" + tzString + ")";
                 }
             );
 
@@ -61,12 +70,10 @@ router.get('/', async (req, res) => {
             // created array
             let editMap = {};
             lastEdits = db.get().collection('o_project_data').find({ $and: [{ "m.ts": { $in: timeStamps } }, { "d": { $in: projectIds } }] });
-            await lastEdits.forEach(
-                doc => {
-                    // A value of null will indicate that the document was created, and has no modifications
-                    editMap[doc.d] = doc.m.userid;
-                }
-            );
+            await lastEdits.forEach(doc => {
+                // A value of null will indicate that the document was created, and has no modifications
+                editMap[doc.d] = doc.m.userid;
+            });
 
             ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
                 res.send(str);
@@ -144,10 +151,22 @@ cmdRouter.get('/edit', (req, res) => {
                     brand: config.brand,
                     pid: escape(req.params.id),
                     ptitle: escape(project.title),
-                    pdata: escape(pdata),
+                    // pdata: escape(pdata),
+                    // pisowner: (project.owner == req.cookies.u),
+                    // piscollab: project.collaborators.includes(req.cookies.u),
+                    pisviewer: project.viewers.includes(req.cookies.u),
+                    // brand: config.brand,
+                    puser: req.cookies.u,
+                    // pid: escape(req.params.id),
+                    // ptitle: escape(project.title),
+                    pdata: escape(((data === undefined) ? "" : data).toString()),
+                    powner: project.owner,
+                    pcollaborators: project.collaborators,
+                    pviewers: project.viewers,
                     pisowner: (project.owner == req.cookies.u),
                     piscollab: project.collaborators.includes(req.cookies.u),
-                    pisviewer: project.viewers.includes(req.cookies.u)
+                    paction: null,
+                    uuid: require('uuid')
                 }
 
                 var connection = sockets.getConnection();
