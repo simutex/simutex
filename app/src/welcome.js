@@ -22,14 +22,9 @@ const config = require('../../config');
  */
 router.get('/', (req, res) => {
     check(() => {
-        let latexmk = path.resolve(config.latexmk.path, 'latexmk.pl');
-        fs.access(latexmk, fs.F_OK, (err) => {
-            let ejs_vars = { latexmk: true, path: latexmk };
-            if (err) ejs_vars.latexmk = false;
-            ejs.renderFile('app/views/welcome.ejs', ejs_vars, {}, (err, str) => {
-                if (err) throw err;
-                res.send(str);
-            });
+        ejs.renderFile('app/views/welcome.ejs', {}, {}, (err, str) => {
+            if (err) throw err;
+            res.send(str);
         });
     }, () => {
         res.renderFile('/')
