@@ -3,13 +3,10 @@ function setChat(passed) {
   if (chatroom) {
     const div = document.createElement('div');
 
+    const text = document.createTextNode(passed);
     div.className = 'row';
 
-    div.innerHTML = `
-    <div>
-      ${passed}
-    </div>
-    `;
+    div.append(text);
     chatroom.appendChild(div);
   }
   console.log(passed);
