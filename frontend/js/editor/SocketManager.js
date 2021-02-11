@@ -152,6 +152,14 @@ doc.subscribe(function (err) {
         chatPing();
     })
 
+    chatroomChatbox.addEventListener('keydown', (e) => {
+        if (!e.repeat)
+            if (e.keyCode == 13) {
+                chatPing();
+                console.log("ENTER PRESSED")
+            }
+      });
+
     function ping() {
         setTimeout(() => {
             sendPing(true, true);
