@@ -27,7 +27,7 @@ var doc = connection.get('project_data', pid);
 
 var path = [];
 var suppressed = false;
-var my_id = uuid.v4();
+var my_id = puser;
 
 doc.subscribe(function (err) {
     if (err) throw err;
@@ -161,6 +161,7 @@ doc.subscribe(function (err) {
         }
     });
     doc.on('op', (ops, source) => {
+        console.log("op made");
         const opsPath = ops[0].p.slice(0, ops[0].p.length - 1).toString();
 
         if (source === my_id) {
