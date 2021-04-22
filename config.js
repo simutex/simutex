@@ -16,8 +16,5 @@ module.exports = {
         project: {
             delete: 'archive'
         }
-    },
-    latexmk: {
-        path: 'X:/simutex-fork/latexmk'
     }
 }
