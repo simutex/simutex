@@ -26,17 +26,30 @@
     <div class="d-flex" id="wrapper">
 
         <!-- Sidebar -->
-        <div class="bg-light border-right" id="sidebar-wrapper">
-            <div class="sidebar-heading text-truncate" data-toggle="tooltip" data-placement="right" title="<%= brand.name %>" style="cursor: default;"><%= brand.name %></div>
-            <div class="list-group list-group-flush" style="height:calc(100% - 57px);">
-                <a href="#" class="list-group-item list-group-item-action bg-light">Dashboard</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Shortcuts</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Overview</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Events</a>
-                <a href="/profile" class="list-group-item list-group-item-action bg-light">Profile</a>
-                <a href="#" class="list-group-item list-group-item-action bg-light">Status</a>
+        <div class="col align-items-end" style="height: 100vh;" id="sidebar-wrapper">
+
+            <div class="col">
+                <div data-toggle="tooltip" data-placement="right" title="<%= brand.name %>" style="cursor: default;"><%= brand.name %></div>
+                <a href="/profile" class="bg-light">Profile</a>
             </div>
+
+
+            <div id="chatroom-container" class="">
+                <div id="chatroom-parent" class="col" style="max-height: 80vh; overflow-y:scroll">
+
+                </div>
+            </div>
+
+            <div class="align-self-end" style="bottom: 0">
+                <div class="form-group">
+                    <input type="text" class="form-control" id="chatroom-chatbox" placeholder="Send message...">
+                </div>
+                <button id="chatroom-submit" type="button" class="btn btn-primary">Primary</button>
+            </div>
+
         </div>
+
+
         <!-- /#sidebar-wrapper -->
 
         <!-- Page Content -->

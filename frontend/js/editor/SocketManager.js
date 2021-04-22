@@ -5,6 +5,7 @@ const { AceCursorManager } = require("./AceCursorManager");
 const sharedb = require("sharedb/lib/client");
 const json1 = require('ot-json1');
 const ViewerManager = require("./ViewerManager");
+const ChatManager = require("./ChatManager");
 const ReconnectingWebSocket = require("reconnecting-websocket").default;
 
 sharedb.types.register(json1.type);
@@ -63,6 +64,8 @@ doc.subscribe(function (err) {
 
     sock2.onmessage = (e) => {
         let data = JSON.parse(e.data);
+        console.log(data);
+        console.log("hi");
         if (data.isPing) {
             let usermd5 = undefined;
             if (data.username in last_user_ping) {
@@ -90,6 +93,10 @@ doc.subscribe(function (err) {
                 }
             } else if (element.action == 'viewUpdate') {
                 ViewerManager.setViewer(element.data);
+            } else if (element.action == 'chatMessage') {
+                console.log("Chat message detected");
+                console.log(element);
+                ChatManager.setChat(element.message);
             }
         });
     };
@@ -121,6 +128,37 @@ doc.subscribe(function (err) {
     aceEditorLeft.on('changeSelection', () => {
         sendPing(false);
     });
+
+    let chatroomSubmit = document.getElementById("chatroom-submit");
+    let chatroomChatbox = document.getElementById("chatroom-chatbox");
+
+    function chatPing() {
+        var data = {
+            isPing: false,
+            actions: [
+                {
+                    action: 'chatMessage',
+                    message: chatroomChatbox.value
+                }
+            ],
+        }
+        sock2.send(JSON.stringify(data));
+        ChatManager.setChat(chatroomChatbox.value);
+        console.log("SENT");
+        chatroomChatbox.value = '';
+    }
+    chatroomSubmit.addEventListener('click', () => {
+        console.log("CLICKED")
+        chatPing();
+    })
+
+    chatroomChatbox.addEventListener('keydown', (e) => {
+        if (!e.repeat)
+            if (e.keyCode == 13) {
+                chatPing();
+                console.log("ENTER PRESSED")
+            }
+      });
 
     function ping() {
         setTimeout(() => {
