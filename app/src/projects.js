@@ -85,23 +85,26 @@ router.get('/', async (req, res) => {
  * Create a new project and redirect them to the editor.
  */
 router.get('/new', (req, res) => {
-    var doc_id = uuid.v4();
-    db.get().collection('projects').find({ id: doc_id }).toArray((err, projects) => {
+    let project_id = uuid.v4();
+    db.get().collection('projects').find({ id: project_id }).toArray((err, projects) => {
         if (projects.length == 0) {
-            var new_project = {
+            let document_id = uuid.v4();
+            let new_project = {
                 title: "New Project",
-                id: doc_id,
+                id: project_id,
                 owner: req.cookies.u,
                 collaborators: [],
-                viewers: []
+                viewers: [],
+                main: document_id,
+                documents: [document_id]
             }
             let new_project_data = `\\documentclass{article}\n\n\\begin{document}\n\tMy New Project\n\\end{document}`;
-            let build_dir = `projects/${doc_id}`;
+            let build_dir = `projects/${project_id}`;
             mkdirp(build_dir).then(made => {
-                let in_file = build_dir + '/in.tex'
+                let in_file = build_dir + '/main.tex'
                 fs.writeFile(in_file, new_project_data, 'utf8', (e) => {
                     db.get().collection('projects').insertOne(new_project, (err, r) => {
-                        res.redirect(`/projects/${doc_id}/edit`);
+                        res.redirect(`/projects/${project_id}/edit`);
                     });
                 });
             });
@@ -141,24 +144,19 @@ cmdRouter.get('/', (req, res) => {
 cmdRouter.get('/edit', (req, res) => {
     auth.middleware.project.modify(req, res, () => {
         // Get project data
-        db.get().collection('projects').findOne({ id: req.params.id }, { projection: { title: true, owner: true, collaborators: true, viewers: true } }, (err, project) => {
+        db.get().collection('projects').findOne({ id: req.params.id }, { projection: { title: true, owner: true, collaborators: true, viewers: true, main: true, documents: true } }, (err, project) => {
             if (err) throw err;
 
-            fs.readFile(`./projects/${req.params.id}/in.tex`, (err, data) => {
+            fs.readFile(`./projects/${req.params.id}/main.tex`, (err, data) => {
                 if (err) throw err;
                 pdata = ((data === undefined) ? "" : data).toString();
                 ejs_vars = {
                     brand: config.brand,
                     pid: escape(req.params.id),
+                    documents: escape(project.documents),
                     ptitle: escape(project.title),
-                    // pdata: escape(pdata),
-                    // pisowner: (project.owner == req.cookies.u),
-                    // piscollab: project.collaborators.includes(req.cookies.u),
                     pisviewer: project.viewers.includes(req.cookies.u),
-                    // brand: config.brand,
                     puser: req.cookies.u,
-                    // pid: escape(req.params.id),
-                    // ptitle: escape(project.title),
                     pdata: escape(((data === undefined) ? "" : data).toString()),
                     powner: project.owner,
                     pcollaborators: project.collaborators,
@@ -170,7 +168,7 @@ cmdRouter.get('/edit', (req, res) => {
                 }
 
                 var connection = sockets.getConnection();
-                var doc = connection.get('project_data', req.params.id);
+                var doc = connection.get('project_data', project.main);
                 doc.fetch((err) => {
                     if (err) throw err;
                     if (doc.type == null) {
@@ -197,7 +195,7 @@ cmdRouter.get('/edit', (req, res) => {
  * Send the PDF document to the browser for rendering.
  */
 cmdRouter.get('/view', auth.middleware.project.access, (req, res) => {
-    res.sendFile(req.params.id + '/in.pdf', { root: 'projects' }, (err) => {
+    res.sendFile(req.params.id + '/main.pdf', { root: 'projects' }, (err) => {
         if (err) throw err;
     });
 });
@@ -217,7 +215,7 @@ cmdRouter.get('/pdf', auth.middleware.project.access, (req, res) => {
  */
 cmdRouter.get('/raw', auth.middleware.project.access, (req, res) => {
     res.set('Content-Type', 'text/html');
-    res.send(fs.readFileSync(`./projects/${req.params.id}/in.tex`).toString());
+    res.send(fs.readFileSync(`./projects/${req.params.id}/main.tex`).toString());
 });
 
 /**
@@ -227,7 +225,7 @@ cmdRouter.get('/raw', auth.middleware.project.access, (req, res) => {
  */
 cmdRouter.get('/text', auth.middleware.project.access, (req, res) => {
     res.set('Content-Type', 'text/html');
-    res.send('<html><body><pre>' + fs.readFileSync(`./projects/${req.params.id}/in.tex`).toString() + '</pre></body></html>');
+    res.send('<html><body><pre>' + fs.readFileSync(`./projects/${req.params.id}/main.tex`).toString() + '</pre></body></html>');
 });
 
 /**
@@ -253,14 +251,12 @@ cmdRouter.get('/delete', auth.middleware.project.owner, (req, res) => {
     switch (config.database.project.delete) {
         case 'all':
             // Delete all data from `projects`, `project_data`, and `o_project_data` and on-disk
-            db.get().collection('projects').deleteOne({ id: req.params.id }, (err, result_one_a) => {
-                db.get().collection('project_data').deleteOne({ _id: req.params.id }, (err, result_one_b) => {
-                    db.get().collection('o_project_data').deleteMany({ d: req.params.id }, (err, result_many) => {
-                        fs.rm(`projects/${req.params.id}`, { recursive: true }, (e) => {
-                            res.redirect('/projects');
-                        });
+            db.get().collection('projects').findOneAndDelete({ id: req.params.id }, { projection: { documents: true } }, (err, ret) => {
+                db.get().collection('o_project_data').deleteMany({ d: { $in: ret.value.documents } }, (err2, ret2) => {
+                    db.get().collection('project_data').deleteOne({ _id: { $in: ret.value.documents } }, (err3, ret3) => {
+                        res.redirect('/projects');
                     });
-                });
+                })
             });
             break;
         case 'hidden':
@@ -287,7 +283,7 @@ cmdRouter.get('/delete', auth.middleware.project.owner, (req, res) => {
  */
 cmdRouter.get('/settings', auth.middleware.project.modify, (req, res) => {
     db.get().collection('projects').findOne({ id: req.params.id }, { projection: { title: true, owner: true, collaborators: true, viewers: true } }, (err, project) => {
-        fs.readFile(`./projects/${req.params.id}/in.tex`, (err, data) => {
+        fs.readFile(`./projects/${req.params.id}/main.tex`, (err, data) => {
             ejs_vars = {
                 brand: config.brand,
                 puser: req.cookies.u,
@@ -314,7 +310,7 @@ cmdRouter.get('/settings', auth.middleware.project.modify, (req, res) => {
  */
 /* cmdRouter.get('/settings/:action', auth.middleware.project.modify, (req, res) => {
     db.get().collection('projects').findOne({ id: req.params.id }, { projection: { title: true, owner: true, collaborators: true } }, (err, project) => {
-        fs.readFile(`./projects/${req.params.id}/in.tex`, (err, data) => {
+        fs.readFile(`./projects/${req.params.id}/main.tex`, (err, data) => {
             ejs_vars = {
                 pid: escape(req.params.id),
                 ptitle: escape(project.title),
@@ -395,7 +391,7 @@ cmdRouter.post('/settings/adduser', auth.middleware.project.modify, (req, res) =
 cmdRouter.post('/build', auth.middleware.project.modify, (req, res) => {
     function runLBS(project, res) {
         let dir = path.resolve('./projects', project);
-        let lbs = spawn('docker', ['run', '--rm', '-i', '--net=none', '-v', `${dir}:/data`, '--name', `lbs-${project}-${uuid.v4()}`, 'latex-full', 'latexmk', '-cd', '-f', '-interaction=batchmode', '-pdf', 'in.tex']);
+        let lbs = spawn('docker', ['run', '--rm', '-i', '--net=none', '-v', `${dir}:/data`, '--name', `lbs-${project}-${uuid.v4()}`, 'latex-full', 'latexmk', '-cd', '-f', '-interaction=batchmode', '-pdf', 'main.tex']);
         lbs.stdout.on("data", data => {
             console.log("stdout: " + data);
         });
@@ -440,7 +436,7 @@ cmdRouter.post('/build', auth.middleware.project.modify, (req, res) => {
 
     let build_dir = 'projects/' + req.params.id;
     mkdirp(build_dir).then(made => {
-        let in_file = build_dir + '/in.tex'
+        let in_file = build_dir + '/main.tex'
         fs.writeFile(in_file, req.body.data, 'utf8', (e) => {
             if (req.body.build == 'true') {
                 runLBS(req.params.id, res);

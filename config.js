@@ -14,7 +14,7 @@ module.exports = {
         port: 27017,
         name: 'simutex',
         project: {
-            delete: 'archive'
+            delete: 'all'
         }
     }
 }
