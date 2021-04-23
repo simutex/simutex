@@ -2,6 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
+    mode: 'development',
     entry: {
         editor: path.resolve(__dirname, 'frontend', 'js', 'editor', 'index.js')
     },

@@ -23,11 +23,10 @@ socket.addEventListener('error', function () {
     console.log('Error');
 });
 
-var doc = connection.get('project_data', pid);
-
 var path = [];
 var suppressed = false;
 var my_id = puser;
+var doc = connection.get('project_data', documents[0]);
 
 doc.subscribe(function (err) {
     if (err) throw err;
@@ -90,6 +89,8 @@ doc.subscribe(function (err) {
                 }
             } else if (element.action == 'viewUpdate') {
                 ViewerManager.setViewer(element.data);
+            } else if (element.action == 'documentUpdate') {
+                // handle updating the front-end HTML for which files are present for the project
             }
         });
     };
