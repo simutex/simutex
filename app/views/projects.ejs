@@ -65,13 +65,15 @@
                 <td><%= projects_data[i]['collaborators'] %></td>
                 <td><%= projects_data[i]['viewers'] %></td>
 
-                <!-- Handle case where userId is null, this is reflected in O-transform DB -->
-                <!-- It is already obvious who created the project from the owner field...  -->
 
-                <% if (edit_map[projects_data[i]['id']] == null) { %>
-                    <td><%= projects_data[i]['owner'] %> created at <%= time_map[projects_data[i].id] %></td>
+
+                <!-- STRUCTURE OF time_map : [userID, converted timestamp] -->
+                <!-- By default on creation, projects_data[i].m.user will be NULL, and overwritten once edited -->
+
+                <% if (projects_data[i].m.user == null) { %>
+                    <td><%= projects_data[i]['owner'] %> created at <%= time_map[projects_data[i].id][1] %></td>
                 <% } else { %>
-                    <td><%= edit_map[projects_data[i]['id']] %> edited at <%= time_map[projects_data[i].id] %></td>
+                    <td><%= time_map[projects_data[i].id][0] %> edited at <%= time_map[projects_data[i].id][1] %></td>
                 <% } %>
 
             </tr>
