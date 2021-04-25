@@ -24,58 +24,64 @@ const sockets = require('./sockets');
  */
 router.use(auth.middleware.credentials);
 
+
+/**
+ * A quick function to convert a unix timestamp to localized time string... 
+ */
+function getConvertedTimeString(timestamp) {
+    var d = new Date(0);
+    d.setUTCMilliseconds(timestamp);
+    // console.log(d.toString());
+
+    let hrMinSec = d.toString().split(" GMT");
+    // console.log(hrMinSec);
+    let timeZone = hrMinSec[1].split(" (");
+    let tzString = timeZone[1].slice(0, timeZone[1].length - 1)
+    let outputString = hrMinSec[0] + " (" + tzString + ")";
+    return outputString;
+}
+
 /**
  * Show a list of all the users projects.
  */
 router.get('/', async (req, res) => {
 
     db.get().collection('projects').find({ "owner": req.cookies.u, $or: [{ hidden: { $exists: false } }, { hidden: false }] })
-        .project({ title: true, id: true, owner: true, collaborators: true, viewers: true })
+        .project({ title: true, id: true, owner: true, collaborators: true, viewers: true, documents: true, m: true, creationTime: true })
         .toArray(async (err, projects) => {
 
-            // Create array of user's specifc project Id's
-            let projectIds = [];
+            // create map of {projectID: [documentIDs]} for use later...
+            let projIDMap = {};
             for (element of projects) {
-                projectIds.push(element.id);
+                projIDMap[element.id] = []
+                for (docID of element.documents) {
+                    projIDMap[element.id].push(docID);
+                }
+            }
+            
+            /**
+             * STRUCTURE OF time_map : [userID, converted timestamp, createdFlag] 
+             * createdFlag indicates if project was only just created
+             */
+
+            let timeMap = {};
+            for (element of projects){
+                // Determine if the project was created, and has no edits to it...
+                const creationCheck = element.m.user;
+
+                if (creationCheck == null) {
+                    // Format timeMap such that "created" instead of "edited" is displayed via the projects.ejs file...
+                    const outputString = getConvertedTimeString(element.creationTime)
+                    timeMap[element.id] = [element.owner, outputString, "Created"];
+                    continue                
+                }
+
+                const outputString = getConvertedTimeString(element.m.ts)
+                timeMap[element.id] = [element.m.user, outputString, null];                
             }
 
-            // Create array of last modified timeStamps for each of user's projects
 
-            let timeStamps = [];
-            let timeMap = {};
-            findMTime = db.get().collection('project_data').find({ "_id": { $in: projectIds } });
-            await findMTime.forEach(
-                doc => {
-                    // doc._m.mtime = UTC epoch var in milliseconds
-                    timeStamps.push(doc._m.mtime);
-                    // console.log(doc._m.mtime);
-
-                    var d = new Date(0);
-                    d.setUTCMilliseconds(doc._m.mtime);
-                    // console.log(d.toString());
-
-                    let hrMinSec = d.toString().split(" GMT");
-                    // console.log(hrMinSec);
-                    let timeZone = hrMinSec[1].split(" (");
-                    let tzString = timeZone[1].slice(0, timeZone[1].length - 1)
-                    // console.log(tzString)
-                    timeMap[doc._id] = hrMinSec[0] + " (" + tzString + ")";
-                }
-            );
-
-            // This uses time stamps of last modification for each project Id
-            // to help determine which user last modified the project.
-
-            // Create a map for {project UID : last modification timeStamp} , filtering on previously
-            // created array
-            let editMap = {};
-            lastEdits = db.get().collection('o_project_data').find({ $and: [{ "m.ts": { $in: timeStamps } }, { "d": { $in: projectIds } }] });
-            await lastEdits.forEach(doc => {
-                // A value of null will indicate that the document was created, and has no modifications
-                editMap[doc.d] = doc.m.userid;
-            });
-
-            ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, edit_map: editMap, time_map: timeMap }, {}, (err, str) => {
+            ejs.renderFile(`app/views/projects.ejs`, { projects_data: projects, time_map: timeMap }, {}, (err, str) => {
                 res.send(str);
             });
         });
@@ -96,7 +102,8 @@ router.get('/new', (req, res) => {
                 collaborators: [],
                 viewers: [],
                 main: document_id,
-                documents: [document_id]
+                documents: [document_id],
+                creationTime: Date.now()
             }
             let new_project_data = `\\documentclass{article}\n\n\\begin{document}\n\tMy New Project\n\\end{document}`;
             let build_dir = `projects/${project_id}`;

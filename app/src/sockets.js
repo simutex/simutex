@@ -8,6 +8,9 @@ const auth = require('./auth');
 const sdb = require('sharedb-mongo')(`mongodb://${config.database.hostname}:${config.database.port}/${config.database.name}`, { mongoOptions: { useUnifiedTopology: true } });
 const backend = new ShareDB({ db: sdb });
 
+// We want to hit the "projects" related mongo to propogate the last timestamp when each project was edited
+const db = require('./db');
+
 /** 
  * Pass custom metadata on to the request agent
  */
@@ -25,6 +28,14 @@ backend.use('connect', (request, callback) => {
  */
 backend.use('submit', (request, callback) => {
     request.op.m.userid = request.agent.custom.userid;
+
+    /**
+     * ---------------------------------------------------------------
+     * IMPORTANT: if a project was JUST created, "m.user" will be null
+     * ---------------------------------------------------------------
+     */
+    db.get().collection('projects').update({ documents: request.id },
+        {$set: {"m.ts": request.op.m.ts, "m.user": request.agent.custom.userid}});
     callback();
 });
 
