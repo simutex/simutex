@@ -58,7 +58,8 @@ router.get('/', async (req, res) => {
                     projIDMap[element.id].push(docID);
                 }
             }
-            
+            console.log(projects)
+
             /**
              * STRUCTURE OF time_map : [userID, converted timestamp, createdFlag] 
              * createdFlag indicates if project was only just created
@@ -72,12 +73,12 @@ router.get('/', async (req, res) => {
                 if (creationCheck == null) {
                     // Format timeMap such that "created" instead of "edited" is displayed via the projects.ejs file...
                     const outputString = getConvertedTimeString(element.creationTime)
-                    timeMap[element.id] = [element.owner, outputString, "Created"];
+                    timeMap[element.id] = [element.owner, outputString];
                     continue                
                 }
 
                 const outputString = getConvertedTimeString(element.m.ts)
-                timeMap[element.id] = [element.m.user, outputString, null];                
+                timeMap[element.id] = [element.m.user, outputString];                
             }
 
 
